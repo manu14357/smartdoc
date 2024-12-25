@@ -32,6 +32,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useResizeDetector } from 'react-resize-detector';
 import SimpleBar from 'simplebar-react';
 import PdfFullscreen from './PdfFullscreen';
+import dynamic from 'next/dynamic';
 import {
   Tooltip,
   TooltipContent,
@@ -54,7 +55,9 @@ import {
 } from './ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useToast } from './ui/use-toast';
-import ReactQuill from 'react-quill'; // Added for advanced notepad
+
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css'; // Quill styles
 
 // Configure PDF.js worker
