@@ -100,3 +100,17 @@
 
 
 
+/* Example CSS */
+.menu {
+  position: relative;
+  z-index: 1000; /* Ensure this is higher than dialog overlays */
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 900; /* Below the menu */
+}

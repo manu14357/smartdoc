@@ -1,105 +1,129 @@
-'use client'
+// src/components/Dashboard.tsx
 
-import { trpc } from '@/app/_trpc/client'
-import UploadButton from './UploadButton'
-import { Ghost, Loader2, Trash, FileText } from 'lucide-react'
-import Skeleton from 'react-loading-skeleton'
-import Link from 'next/link'
-import { format } from 'date-fns'
-import { Button } from './ui/button'
-import { useState } from 'react'
-import { getUserSubscriptionPlan } from '@/lib/stripe'
-import Calendar from 'react-calendar'
-import 'react-calendar/dist/Calendar.css'
+'use client';
+
+import { trpc } from '@/app/_trpc/client';
+import UploadButton from './UploadButton';
+import { Ghost, Loader2, Trash, FileText } from 'lucide-react';
+import Skeleton from 'react-loading-skeleton';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import { Button } from './ui/button';
+import { useState, useEffect } from 'react';
+import { getUserSubscriptionPlan } from '@/lib/stripe';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import ExportButton from '../components/chat/ExportButton';
+import FeedbackModal from './FeedbackModal'; // Import the FeedbackModal component
+import { FaStar } from "react-icons/fa";
 interface PageProps {
-  subscriptionPlan: Awaited<ReturnType<typeof getUserSubscriptionPlan>>
+  subscriptionPlan: Awaited<ReturnType<typeof getUserSubscriptionPlan>>;
 }
 
 const Dashboard = ({ subscriptionPlan }: PageProps) => {
-  const [currentlyDeletingFile, setCurrentlyDeletingFile] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'date' | 'month' | 'week'>('all')
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false) // State to control the confirmation dialog
-  const [fileToDelete, setFileToDelete] = useState<string | null>(null) // Store file id to delete
+  const [currentlyDeletingFile, setCurrentlyDeletingFile] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'date' | 'month' | 'week'>('all');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
-  const utils = trpc.useContext()
+  const [isHovered, setIsHovered] = useState(false);
+  // State for Feedback Modal
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
-  const { data: files, isLoading } = trpc.getUserFiles.useQuery()
+  const utils = trpc.useContext();
+  const { data: files, isLoading } = trpc.getUserFiles.useQuery();
 
   const { mutate: deleteFile } = trpc.deleteFile.useMutation({
     onSuccess: () => {
-      utils.getUserFiles.invalidate()
+      utils.getUserFiles.invalidate();
     },
     onMutate({ id }) {
-      setCurrentlyDeletingFile(id)
+      setCurrentlyDeletingFile(id);
     },
     onSettled() {
-      setCurrentlyDeletingFile(null)
-      setDeleteDialogOpen(false) // Close dialog after deletion
-      setFileToDelete(null)
+      setCurrentlyDeletingFile(null);
+      setDeleteDialogOpen(false);
+      setFileToDelete(null);
     },
-  })
+  });
 
   const getFileTypeIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase()
+    const ext = fileName.split('.').pop()?.toLowerCase();
     switch (ext) {
       case 'doc':
       case 'docx':
-        return <FileText className='h-5 w-5 text-[hsl(272.1,71.7%,47.1%)]' />
+        return <FileText className='h-5 w-5 text-[hsl(272.1,71.7%,47.1%)]' />;
       case 'pdf':
-        return <FileText className='h-5 w-5 text-[hsl(272.1,71.7%,47.1%)]' />
+        return <FileText className='h-5 w-5 text-[hsl(272.1,71.7%,47.1%)]' />;
       case 'txt':
-        return <FileText className='h-5 w-5 text-green-500' />
+        return <FileText className='h-5 w-5 text-green-500' />;
       default:
-        return <FileText className='h-5 w-5 text-gray-500' />
+        return <FileText className='h-5 w-5 text-gray-500' />;
     }
-  }
+  };
 
   const filteredFiles = files?.filter((file) => {
-    const matchesSearchQuery = file.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearchQuery = file.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    let matchesDateFilter = true
+    let matchesDateFilter = true;
     if (selectedFilter === 'date' && selectedDate) {
-      const fileDate = new Date(file.createdAt)
-      matchesDateFilter = fileDate.toDateString() === selectedDate.toDateString()
+      const fileDate = new Date(file.createdAt);
+      matchesDateFilter = fileDate.toDateString() === selectedDate.toDateString();
     }
 
     if (selectedFilter === 'month' && selectedDate) {
-      const fileDate = new Date(file.createdAt)
-      matchesDateFilter = fileDate.getMonth() === selectedDate.getMonth() && fileDate.getFullYear() === selectedDate.getFullYear()
+      const fileDate = new Date(file.createdAt);
+      matchesDateFilter =
+        fileDate.getMonth() === selectedDate.getMonth() &&
+        fileDate.getFullYear() === selectedDate.getFullYear();
     }
 
     if (selectedFilter === 'week' && selectedDate) {
-      const fileDate = new Date(file.createdAt)
-      const startOfWeek = new Date(selectedDate)
-      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
-      const endOfWeek = new Date(startOfWeek)
-      endOfWeek.setDate(startOfWeek.getDate() + 6)
-      matchesDateFilter = fileDate >= startOfWeek && fileDate <= endOfWeek
+      const fileDate = new Date(file.createdAt);
+      const startOfWeek = new Date(selectedDate);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      matchesDateFilter = fileDate >= startOfWeek && fileDate <= endOfWeek;
     }
 
-    return matchesSearchQuery && matchesDateFilter
-  })
+    return matchesSearchQuery && matchesDateFilter;
+  });
 
   // Handle the confirmation of file deletion
   const handleDeleteConfirmation = (fileId: string) => {
-    setFileToDelete(fileId)
-    setDeleteDialogOpen(true)
-  }
+    setFileToDelete(fileId);
+    setDeleteDialogOpen(true);
+  };
 
   // Handle the actual deletion of file after confirmation
   const confirmDelete = () => {
     if (fileToDelete) {
-      deleteFile({ id: fileToDelete })
+      deleteFile({ id: fileToDelete });
     }
-  }
+  };
+
+  // Effect to open Feedback Modal after 2 minutes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsFeedbackOpen(true);
+    }, 0.2 * 60 * 1000); // 2 minutes in milliseconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle Feedback Submission
+  const handleFeedbackSubmit = (feedback: string) => {
+    // TODO: Send the feedback to your backend or API
+    console.log('User Feedback:', feedback);
+    // Example: trpc.sendFeedback.mutate({ feedback });
+  };
 
   return (
     <main className='mx-auto max-w-7xl p-4 md:p-10'>
       <div className='mt-12 flex flex-col items-start justify-between gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:gap-0'>
-        
         <h1 className='mb-3 font-bold text-2xl md:text-5xl text-gray-900'>My Files</h1>
         <UploadButton isSubscribed={subscriptionPlan.isSubscribed} />
       </div>
@@ -114,7 +138,6 @@ const Dashboard = ({ subscriptionPlan }: PageProps) => {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
         <div className='flex items-center space-x-2'>
-          
           <Button
             variant={selectedFilter === 'all' ? 'primary' : 'outline'}
             onClick={() => setSelectedFilter('all')}
@@ -172,12 +195,11 @@ const Dashboard = ({ subscriptionPlan }: PageProps) => {
                   </div>
                 </Link>
 
-                <div className='border-t border-gray-200 p-4 ' >
+                <div className='border-t border-gray-200 p-4 '>
                   <Button
                     onClick={() => handleDeleteConfirmation(file.id)}
                     size='sm'
                     className='w-full bg-[hsl(271.5,81.3%,55.9%)] hover:bg-[hsl(271.5,81.3%,55.9%)] hover:bg-opacity-80'
-   
                     variant='destructive'>
                     {currentlyDeletingFile === file.id ? (
                       <Loader2 className='h-4 w-4 animate-spin' />
@@ -188,7 +210,6 @@ const Dashboard = ({ subscriptionPlan }: PageProps) => {
                       </>
                     )}
                   </Button>
-                  
                 </div>
               </li>
             ))}
@@ -220,8 +241,36 @@ const Dashboard = ({ subscriptionPlan }: PageProps) => {
           </div>
         </div>
       )}
-    </main>
-  )
-}
 
-export default Dashboard
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+      />
+
+      {/* Fixed Feedback Button */}
+      <Button
+      className="
+        hidden md:flex
+        fixed bottom-4 right-4
+        items-center justify-center
+        rounded-full
+        bg-[hsl(271.5,81.3%,55.9%)]
+        w-12 h-12  // Set width and height to make the button round
+        text-white
+        shadow-md hover:shadow-lg
+        hover:bg-[hsl(271.5,81.3%,65%)]
+        focus:outline-none focus:ring-4 focus:ring-[hsl(271.5,81.3%,80%)]
+        transition-all duration-300
+        ease-in-out
+      "
+      onClick={() => setIsFeedbackOpen(true)}
+    >
+      <FaStar className="text-lg" />
+    </Button>
+    </main>
+  );
+};
+
+export default Dashboard;

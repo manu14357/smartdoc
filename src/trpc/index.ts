@@ -215,6 +215,28 @@ export const appRouter = router({
 
       return file
     }),
+    submitFeedback: privateProcedure
+    .input(
+      z.object({
+        content: z.string().min(10, 'Feedback must be at least 10 characters long'),
+        rating: z.number().min(1, 'Rating must be at least 1').max(5, 'Rating cannot exceed 5'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { userId } = ctx
+
+      if (!userId) throw new TRPCError({ code: 'UNAUTHORIZED' })
+
+      const feedback = await db.feedback.create({
+        data: {
+          content: input.content,
+          rating: input.rating,
+          userId,
+        },
+      })
+
+      return feedback
+    }),
 })
 
 export type AppRouter = typeof appRouter
