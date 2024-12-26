@@ -12,17 +12,29 @@ const nextConfig = {
         destination: '/api/auth/register',
         permanent: true,
       },
-    ]
+    ];
   },
 
-  webpack: (
-    config,
-    { buildId, dev, isServer, defaultLoaders, webpack }
-  ) => {
-    config.resolve.alias.canvas = false
-    config.resolve.alias.encoding = false
-    return config
-  },
-}
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    if (!isServer) {
+      config.node = {
+        // fs: 'empty',
+      };
+    }
 
-module.exports = nextConfig
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+      encoding: false,
+    };
+
+    config.module.rules.push({
+      test: /some-module/,
+      use: 'null-loader',
+    });
+
+    return config;
+  },
+};
+
+module.exports = nextConfig;

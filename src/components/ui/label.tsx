@@ -21,10 +21,8 @@ const Label = React.forwardRef<
 ))
 Label.displayName = LabelPrimitive.Root.displayName
 
-// Textarea Component
-import * as React from "react"
-import { cn } from "@/lib/utils"
 
+// Textarea Component
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
 

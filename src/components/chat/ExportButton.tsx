@@ -100,4 +100,4 @@ const ExportButton: React.FC<{
   );
 };
 
-export default ExportButton;
+export default ExportButton

@@ -18,15 +18,28 @@ const Message = forwardRef<HTMLDivElement, MessageProps>(
     const [isHovered, setIsHovered] = useState(false)
 
     const handleCopy = () => {
-      navigator.clipboard.writeText(message.text)
-      setCopied(true)
-      
-      const timer = setTimeout(() => {
-        setCopied(false)
-      }, 2000)
-
-      return () => clearTimeout(timer)
-    }
+      let textToCopy: string;
+    
+      if (typeof message.text === 'string') {
+        textToCopy = message.text;
+      } else if (message.text instanceof Element) {
+        textToCopy = message.text.outerHTML; // Serializes the element to an HTML string
+      } else {
+        console.warn('Unsupported type for message.text');
+        return;
+      }
+    
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          setCopied(true);
+          const timer = setTimeout(() => setCopied(false), 2000);
+          return () => clearTimeout(timer);
+        })
+        .catch((err) => {
+          console.error('Failed to copy text: ', err);
+          // Optionally, display an error toast here
+        });
+    };
 
     if (message.id === 'loading-message') {
       return (

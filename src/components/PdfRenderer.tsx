@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
@@ -392,19 +393,19 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   }, [viewMode]);
 
   // ----- Highlighting Logic -----
-  const customTextRenderer = ({ str, idx }: { str: string; idx: number }) => {
+  const customTextRenderer = (props: { str: string; pageIndex: number; pageNumber: number; itemIndex: number }) => {
+    const { str } = props;
     if (!highlightedWord) return str;
     const regex = new RegExp(`(${highlightedWord})`, 'gi');
     const parts = str.split(regex);
+  
     return parts.map((part, i) =>
       regex.test(part) ? (
-        <span key={i} style={{ backgroundColor: 'yellow' }}>
-          {part}
-        </span>
+        React.createElement('span', { key: i, style: { backgroundColor: 'yellow' } }, part)
       ) : (
         part
       )
-    );
+    ).join('');
   };
 
   // ----- Mobile Gesture Handlers -----
@@ -1020,22 +1021,22 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                     key={`loading-${renderedScale}`}
                   />
                 ) : null}
-                <Page
-                  pageNumber={currPage}
-                  className={isLoading ? 'hidden' : ''}
-                  width={width ? (viewMode === 'double' && !isMobile ? width / 2 : width) : 1}
-                  scale={scale}
-                  rotate={rotation}
-                  key={`page-${scale}`}
-                  loading={
-                    <div className="flex justify-center">
-                      <Loader2 className="my-24 h-6 w-6 animate-spin" />
-                    </div>
-                  }
-                  onRenderSuccess={() => setRenderedScale(scale)}
-                  renderTextLayer={true}
-                  customTextRenderer={customTextRenderer} // Apply custom text renderer
-                />
+<Page
+  pageNumber={currPage}
+  className={isLoading ? 'hidden' : ''}
+  width={width ? (viewMode === 'double' && !isMobile ? width / 2 : width) : 1}
+  scale={scale}
+  rotate={rotation}
+  key={`page-${scale}`}
+  loading={
+    <div className="flex justify-center">
+      <Loader2 className="my-24 h-6 w-6 animate-spin" />
+    </div>
+  }
+  onRenderSuccess={() => setRenderedScale(scale)}
+  renderTextLayer={true}
+  customTextRenderer={customTextRenderer} // Apply custom text renderer
+/>
                 {/* If in double mode, show next page side-by-side when available */}
                 {viewMode === 'double' && !isMobile && currPage < (numPages || 1) && (
                   <Page
@@ -1065,4 +1066,4 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   );
 };
 
-export default PdfRenderer;
+export default PdfRenderer

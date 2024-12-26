@@ -9,6 +9,17 @@ import * as pdfjs from 'pdfjs-dist'
 import { join } from 'path'
 pdfjs.GlobalWorkerOptions.workerSrc = join(process.cwd(), 'node_modules', 'pdfjs-dist', 'build', 'pdf.worker.min.js')
 
+// Define the Message interface
+interface Message {
+  id: string;
+  text: string;
+  isUserMessage: boolean;
+  fileId: string | null;
+  userId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export const POST = async (req: NextRequest) => {
   const body = await req.json()
 
@@ -62,24 +73,35 @@ export const POST = async (req: NextRequest) => {
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdfDoc.getPage(pageNum)
       const textContent = await page.getTextContent()
-      pdfText += textContent.items.map((item) => item.str).join(' ') + '\n'
+      pdfText += textContent.items
+        .map((item) => ('str' in item ? item.str : ''))
+        .join(' ') + '\n'
     }
 
     // Prepare context from the extracted PDF content
     const results = pdfText.substring(0, 2000) // Adjust the length if needed
 
     // Step 4: Format the previous messages as context for the chat
-    const prevMessages = await db.message.findMany({
+    const prevMessages: Message[] = await db.message.findMany({
       where: {
         fileId,
+      },
+      select: {
+        id: true,
+        text: true,
+        isUserMessage: true,
+        fileId: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: {
         createdAt: 'asc',
       },
       take: 6,
-    })
+    }) as Message[];
 
-    const formattedPrevMessages = prevMessages.map((msg) => ({
+    const formattedPrevMessages = prevMessages.map((msg: Message) => ({
       role: msg.isUserMessage ? 'user' : 'assistant',
       content: msg.text,
     }))

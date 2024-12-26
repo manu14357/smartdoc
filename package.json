@@ -35,11 +35,9 @@
     "@trpc/next": "^10.38.4",
     "@trpc/react-query": "^10.38.4",
     "@trpc/server": "^10.38.4",
-    "@types/marked": "^5.0.2",
     "@types/node": "20.6.3",
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
-    "@types/react-pdf": "^6.2.0",
     "@uploadthing/react": "^5.6.1",
     "ai": "^2.2.13",
     "autoprefixer": "10.4.16",
@@ -49,7 +47,6 @@
     "date-fns": "^2.30.0",
     "draft-js": "^0.11.7",
     "draft-js-plugins-editor": "^3.0.0",
-    "eslint": "8.49.0",
     "eslint-config-next": "13.5.2",
     "express": "^4.21.2",
     "express-fileupload": "^1.5.1",
@@ -119,8 +116,15 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@shadcn/ui": "^0.0.4",
     "@tailwindcss/typography": "^0.5.15",
-    "@types/file-saver": "^2.0.7"
+    "@types/file-saver": "^2.0.7",
+    "@types/marked": "^5.0.2",
+    "@types/react-pdf": "^6.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/parser": "^8.18.2",
+    "eslint": "^8.57.1",
+    "globals": "^15.14.0"
   }
 }

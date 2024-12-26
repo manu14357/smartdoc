@@ -1,21 +1,26 @@
 // RichTextEditor.tsx
-import React, { useState } from 'react'
-import { Editor, EditorState, RichUtils } from 'draft-js'
-import 'draft-js/dist/Draft.css'
+import React from 'react';
+import { Editor, EditorState, RichUtils, DraftEditorCommand } from 'draft-js';
+import 'draft-js/dist/Draft.css';
 
-const RichTextEditor = ({ editorState, setEditorState }) => {
-  const handleKeyCommand = (command) => {
-    const newState = RichUtils.handleKeyCommand(editorState, command)
+interface RichTextEditorProps {
+  editorState: EditorState;
+  setEditorState: (editorState: EditorState) => void;
+}
+
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ editorState, setEditorState }) => {
+  const handleKeyCommand = (command: DraftEditorCommand): 'handled' | 'not-handled' => {
+    const newState = RichUtils.handleKeyCommand(editorState, command);
     if (newState) {
-      setEditorState(newState)
-      return 'handled'
+      setEditorState(newState);
+      return 'handled';
     }
-    return 'not-handled'
-  }
+    return 'not-handled';
+  };
 
-  const toggleInlineStyle = (style) => {
-    setEditorState(RichUtils.toggleInlineStyle(editorState, style))
-  }
+  const toggleInlineStyle = (style: string) => {
+    setEditorState(RichUtils.toggleInlineStyle(editorState, style));
+  };
 
   return (
     <div>
@@ -33,7 +38,7 @@ const RichTextEditor = ({ editorState, setEditorState }) => {
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default RichTextEditor

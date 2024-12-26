@@ -5,7 +5,7 @@ import React, {
     useCallback,
     useMemo,
   } from 'react';
-  import { Button } from './ui/button';
+  import { Button, ButtonProps } from './ui/button';
   import axios from 'axios';
   import { useForm, SubmitHandler } from 'react-hook-form';
   import { z } from 'zod';
@@ -17,13 +17,18 @@ import React, {
   
   // Define the custom HSL color for consistent theming
   const customHSLColor = 'hsl(271.5,81.3%,55.9%)';
-  
+  type ButtonVariant = "link" | "outline" | "default" | "destructive" | "secondary" | "ghost";
+
   // Props for the FeedbackModal component
   interface FeedbackModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSubmit: (feedback: string) => void; // Added onSubmit prop
   }
-  
+  interface RippleButtonProps extends ButtonProps {
+    variant?: ButtonVariant;
+    className?: string;
+  }
   // Form input types
   interface FeedbackFormInputs {
     content: string;
@@ -162,17 +167,14 @@ import React, {
     );
   };
   
-  // Ripple Button Component
-  interface RippleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: string;
-    className?: string;
-  }
+
   
   const RippleButton: React.FC<RippleButtonProps> = ({ 
     onClick, 
     disabled, 
     children, 
     className,
+    variant = "default", // Provide a default variant if necessary
     ...props 
   }) => {
     const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
@@ -209,6 +211,7 @@ import React, {
     return (
       <Button
         ref={buttonRef}
+        variant={variant} // Now correctly typed
         className={`relative overflow-hidden ${className}`}
         onClick={createRipple}
         disabled={disabled}
@@ -620,4 +623,4 @@ import React, {
     );
   };
   
-  export default FeedbackModal;
+  export default FeedbackModal

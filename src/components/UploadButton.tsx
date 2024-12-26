@@ -62,13 +62,13 @@ const UploadDropzone = ({
   return (
     <Dropzone
       multiple={false}
-      onDrop={async (acceptedFile) => {
+      onDrop={async (acceptedFiles) => {
         setIsUploading(true)
 
         const progressInterval = startSimulatedProgress()
 
         // handle file uploading
-        const res = await startUpload(acceptedFile)
+        const res = await startUpload(acceptedFiles)
 
         if (!res) {
           return toast({

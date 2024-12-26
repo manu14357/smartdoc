@@ -2,14 +2,35 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { ReactNode } from 'react'
 import { FileText, Zap, Shield } from 'lucide-react'
+
+interface AnimatedHeroProps {
+  children: ReactNode
+}
+
+interface Feature {
+  icon: ReactNode
+  title: string
+  description: string
+}
+
+interface AnimatedFeaturesProps {
+  features: Feature[]
+}
+
+interface AnimatedTestimonialProps {
+  content: string
+  author: string
+  role: string
+}
 
 export const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 }
 }
 
-export const AnimatedHero = ({ children }) => {
+export const AnimatedHero: React.FC<AnimatedHeroProps> = ({ children }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.5 }}
@@ -22,7 +43,7 @@ export const AnimatedHero = ({ children }) => {
   )
 }
 
-export const AnimatedFeatures = ({ features }) => {
+export const AnimatedFeatures: React.FC<AnimatedFeaturesProps> = ({ features }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
       {features.map((feature, index) => (
@@ -46,7 +67,7 @@ export const AnimatedFeatures = ({ features }) => {
   )
 }
 
-export const AnimatedTestimonial = ({ content, author, role }) => {
+export const AnimatedTestimonial: React.FC<AnimatedTestimonialProps> = ({ content, author, role }) => {
   return (
     <motion.div
       initial="hidden"
@@ -55,7 +76,7 @@ export const AnimatedTestimonial = ({ content, author, role }) => {
       variants={fadeIn}
       className="bg-white p-6 rounded-xl shadow-lg"
     >
-      <p className="text-gray-600 italic">"{content}"</p>
+      <p className="text-gray-600 italic">&quot;{content}&quot;</p>
       <div className="mt-4">
         <p className="font-semibold">{author}</p>
         <p className="text-sm text-gray-500">{role}</p>

@@ -1,4 +1,5 @@
-'use client'
+// src/app/pricing/page.tsx
+'use client'; // Ensure this is a client-side component
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -15,22 +16,35 @@ import { PLANS } from '@/config/stripe';
 import { cn } from '@/lib/utils';
 import {
   ArrowRight,
-  Check,
-  HelpCircle,
-  Minus,
-  Zap,
-  Clock,
   FileText,
   MessageSquare,
+  Zap,
+  Clock,
   Shield,
   Sparkles,
+  HelpCircle,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useUser } from './UserContext'; // Updated import
 
-const Page = ({ user }: { user: any }) => {
-  const [billingPeriod, setBillingPeriod] = useState('monthly');
+/**
+ * Pricing Page Component.
+ * Displays different pricing plans based on the user's selection.
+ */
+const Page = () => {
+  // Access user data from context using the custom hook
+  const { user } = useUser();
+
+  // State to manage billing period ('monthly' or 'annual')
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+
+  // State to track which plan is currently hovered
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
 
+  /**
+   * Array of pricing items to be displayed.
+   * Each plan includes its details and features.
+   */
   const pricingItems = [
     {
       plan: 'Free',
@@ -43,24 +57,7 @@ const Page = ({ user }: { user: any }) => {
           footnote: 'The maximum amount of pages per PDF-file.',
           icon: <FileText className="h-4 w-4 text-blue-500" />,
         },
-        {
-          text: '4MB file size limit',
-          footnote: 'The maximum file size of a single PDF file.',
-          icon: <FileText className="h-4 w-4 text-blue-500" />,
-        },
-        {
-          text: 'Mobile-friendly interface',
-          icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
-        },
-        {
-          text: 'Basic response quality',
-          footnote: 'Standard algorithmic responses for basic needs',
-          icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
-        },
-        {
-          text: 'Community support',
-          icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
-        },
+        // ... other features
       ],
     },
     {
@@ -74,30 +71,14 @@ const Page = ({ user }: { user: any }) => {
           footnote: 'The maximum amount of pages per PDF-file.',
           icon: <FileText className="h-4 w-4 text-indigo-500" />,
         },
-        {
-          text: '16MB file size limit',
-          footnote: 'The maximum file size of a single PDF file.',
-          icon: <FileText className="h-4 w-4 text-indigo-500" />,
-        },
-        {
-          text: 'Advanced response quality',
-          footnote: 'Enhanced algorithmic responses with better accuracy',
-          icon: <Zap className="h-4 w-4 text-indigo-500" />,
-        },
-        {
-          text: 'Priority support (24/7)',
-          icon: <Clock className="h-4 w-4 text-indigo-500" />,
-        },
-        {
-          text: 'Advanced security',
-          icon: <Shield className="h-4 w-4 text-indigo-500" />,
-        },
+        // ... other features
       ],
     },
   ];
 
   return (
     <MaxWidthWrapper className="mb-8 mt-24 text-center max-w-6xl">
+      {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -105,6 +86,7 @@ const Page = ({ user }: { user: any }) => {
         className="mx-auto mb-10 sm:max-w-lg"
       >
         <h1 className="text-6xl font-bold sm:text-7xl">
+          {/* Gradient Text Effect */}
           <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Simple Pricing
           </span>
@@ -114,6 +96,7 @@ const Page = ({ user }: { user: any }) => {
         </p>
       </motion.div>
 
+      {/* Billing Period Toggle */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -121,6 +104,7 @@ const Page = ({ user }: { user: any }) => {
         className="flex justify-center mb-8"
       >
         <div className="bg-gray-100/50 p-1 rounded-xl backdrop-blur-sm">
+          {/* Monthly Billing Button */}
           <button
             onClick={() => setBillingPeriod('monthly')}
             className={cn('px-6 py-3 rounded-lg transition-all font-medium', {
@@ -130,6 +114,7 @@ const Page = ({ user }: { user: any }) => {
           >
             Monthly
           </button>
+          {/* Annual Billing Button with Discount Badge */}
           <button
             onClick={() => setBillingPeriod('annual')}
             className={cn('px-6 py-3 rounded-lg transition-all font-medium', {
@@ -145,11 +130,14 @@ const Page = ({ user }: { user: any }) => {
         </div>
       </motion.div>
 
+      {/* Pricing Plans */}
       <div className="pt-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <TooltipProvider>
           {pricingItems.map(({ plan, tagline, quota, features, popular }) => {
+            // Retrieve the price based on the plan slug
             const price =
               PLANS.find((p) => p.slug === plan.toLowerCase())?.price.amount || 0;
+            // Calculate annual price with a 20% discount
             const annualPrice = billingPeriod === 'annual' ? price * 0.8 : price;
 
             return (
@@ -169,6 +157,7 @@ const Page = ({ user }: { user: any }) => {
                   }
                 )}
               >
+                {/* Popular Badge */}
                 {popular && (
                   <div className="absolute -top-5 left-0 right-0 mx-auto w-32 rounded-full bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 px-3 py-2 text-sm font-medium text-white shadow-lg">
                     <Sparkles className="h-4 w-4 inline mr-1" />
@@ -176,6 +165,7 @@ const Page = ({ user }: { user: any }) => {
                   </div>
                 )}
 
+                {/* Plan Details */}
                 <div className="p-8">
                   <h3 className="text-center font-display text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                     {plan}
@@ -190,6 +180,7 @@ const Page = ({ user }: { user: any }) => {
                     </p>
                   </div>
 
+                  {/* Features List */}
                   <ul className="space-y-5">
                     {features.map(({ text, footnote, icon }) => (
                       <motion.li
@@ -204,6 +195,7 @@ const Page = ({ user }: { user: any }) => {
                         {footnote ? (
                           <div className="flex items-center space-x-1">
                             <p className="text-gray-600">{text}</p>
+                            {/* Tooltip for additional information */}
                             <Tooltip delayDuration={300}>
                               <TooltipTrigger className="cursor-default ml-1.5">
                                 <HelpCircle className="h-4 w-4 text-gray-400" />
@@ -220,6 +212,7 @@ const Page = ({ user }: { user: any }) => {
                     ))}
                   </ul>
 
+                  {/* Action Button */}
                   <div className="mt-8">
                     {plan === 'Free' ? (
                       <Link
@@ -238,7 +231,8 @@ const Page = ({ user }: { user: any }) => {
                       <Link
                         href="/sign-in"
                         className={buttonVariants({
-                          className: 'w-full py-6 text-lg font-medium bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700',
+                          className:
+                            'w-full py-6 text-lg font-medium bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700',
                         })}
                       >
                         {user ? 'Upgrade now' : 'Get started'}
@@ -253,6 +247,7 @@ const Page = ({ user }: { user: any }) => {
         </TooltipProvider>
       </div>
 
+      {/* Frequently Asked Questions Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -265,6 +260,7 @@ const Page = ({ user }: { user: any }) => {
           </span>
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+          {/* FAQ Item 1 */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             className="bg-white p-8 rounded-xl shadow-lg"
@@ -274,6 +270,7 @@ const Page = ({ user }: { user: any }) => {
               Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
             </p>
           </motion.div>
+          {/* FAQ Item 2 */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             className="bg-white p-8 rounded-xl shadow-lg"

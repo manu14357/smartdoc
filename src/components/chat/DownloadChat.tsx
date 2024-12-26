@@ -1,40 +1,25 @@
-import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import {
-  Download,
-  Eye,
-  FileText,
-  List,
-  MessageCircle,
-  BarChart,
-  Tag,
-  Copy,
-  FileSpreadsheet
-} from 'lucide-react';
-import { trpc } from '@/app/_trpc/client';
-import { INFINITE_QUERY_LIMIT } from '@/config/infinite-query';
-import { useToast } from '@/components/ui/use-toast';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import React, { useState, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ExportButton from './ExportButton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Download, Eye, FileText, List, MessageCircle, BarChart, Tag, Copy, FileSpreadsheet } from 'lucide-react';
+import { trpc } from '@/app/_trpc/client';
+import { INFINITE_QUERY_LIMIT } from '@/config/infinite-query';
+import { useToast } from '@/components/ui/use-toast';
 
 // Define the structure of a chat message
 interface Message {
   id: string;
   text: string;
   isUserMessage: boolean;
-  createdAt: Date;
+  createdAt: Date; // Ensure this is always a Date
   metadata?: Record<string, any>;
 }
 
@@ -66,7 +51,13 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
 
   // Flatten the paginated messages into a single array
   const messages = useMemo(
-    () => messagePages?.pages.flatMap((page) => page.messages) ?? [],
+    () =>
+      messagePages?.pages.flatMap((page) =>
+        page.messages.map((msg) => ({
+          ...msg,
+          createdAt: new Date(msg.createdAt),
+        }))
+      ) ?? [],
     [messagePages]
   );
 
@@ -122,7 +113,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     });
 
     // Define a color palette for consistent styling
-    const colors = {
+    const colors: { [key: string]: [number, number, number] } = {
       primary: [31, 97, 141], // Deep Blue
       secondary: [22, 160, 133], // Teal
       background: [240, 248, 255], // Light Blue Background
@@ -262,8 +253,14 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
    */
   const generatePDF = (preview = false, fullMessageList = false) => {
     try {
-      const pdf = createComprehensivePdfDocument(messages, fullMessageList);
-
+      // Convert createdAt from string to Date
+      const convertedMessages = messages.map((message) => ({
+        ...message,
+        createdAt: new Date(message.createdAt),
+      }));
+  
+      const pdf = createComprehensivePdfDocument(convertedMessages, fullMessageList);
+  
       if (preview) {
         const pdfBlob = pdf.output('blob');
         const url = URL.createObjectURL(pdfBlob);
@@ -301,7 +298,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
       link.href = url;
       link.download = `chat-history-${fileName}.txt`;
       link.click();
-
+  
       toast({
         title: 'Success',
         description: 'Chat history downloaded as plain text',
@@ -408,6 +405,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
       </div>
     );
   };
+
 
   /**
    * Renders the preview tabs allowing users to switch between different views.
@@ -729,4 +727,4 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
   );
 };
 
-export default DownloadChat;
+export default DownloadChat
