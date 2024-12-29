@@ -1,43 +1,41 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  Download, 
-  FileText, 
-  FileSpreadsheet, 
-  MoreHorizontal 
-} from 'lucide-react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { toast } from '@/components/ui/use-toast';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Download,
+  FileText,
+  FileSpreadsheet,
+  MoreHorizontal,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from "@/components/ui/use-toast";
 
 const ExportButton: React.FC<{
   generatePDF: (preview: boolean, fullMessages?: boolean) => void;
   downloadPlainText: () => void;
   downloadExcel: () => void;
-}> = ({ 
-  generatePDF, 
-  downloadPlainText, 
-  downloadExcel 
-}) => {
+}> = ({ generatePDF, downloadPlainText, downloadExcel }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleExport = (exportType: 'pdf-summary' | 'pdf-full' | 'text' | 'excel') => {
+  const handleExport = (
+    exportType: "pdf-summary" | "pdf-full" | "text" | "excel",
+  ) => {
     switch (exportType) {
-      case 'pdf-summary':
+      case "pdf-summary":
         generatePDF(false);
         break;
-      case 'pdf-full':
+      case "pdf-full":
         generatePDF(false, true);
         break;
-      case 'text':
+      case "text":
         downloadPlainText();
         break;
-      case 'excel':
+      case "excel":
         downloadExcel();
         break;
     }
@@ -47,11 +45,7 @@ const ExportButton: React.FC<{
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex items-center gap-2"
-        >
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
           <Download className="size-4" />
           Export
           <MoreHorizontal className="size-4 ml-2" />
@@ -62,36 +56,36 @@ const ExportButton: React.FC<{
           <DialogTitle>Export Chat History</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="justify-start gap-2"
-            onClick={() => handleExport('pdf-summary')}
+            onClick={() => handleExport("pdf-summary")}
           >
-            <Download className="size-4" /> 
+            <Download className="size-4" />
             PDF (Summary)
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="justify-start gap-2"
-            onClick={() => handleExport('pdf-full')}
+            onClick={() => handleExport("pdf-full")}
           >
-            <Download className="size-4" /> 
+            <Download className="size-4" />
             PDF (Full Messages)
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="justify-start gap-2"
-            onClick={() => handleExport('text')}
+            onClick={() => handleExport("text")}
           >
-            <FileText className="size-4" /> 
+            <FileText className="size-4" />
             Plain Text
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="justify-start gap-2"
-            onClick={() => handleExport('excel')}
+            onClick={() => handleExport("excel")}
           >
-            <FileSpreadsheet className="size-4" /> 
+            <FileSpreadsheet className="size-4" />
             Excel Spreadsheet
           </Button>
         </div>
@@ -100,4 +94,4 @@ const ExportButton: React.FC<{
   );
 };
 
-export default ExportButton
+export default ExportButton;

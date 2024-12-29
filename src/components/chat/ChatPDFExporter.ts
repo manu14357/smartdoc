@@ -1,12 +1,12 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 interface Message {
   text: string;
   isUserMessage: boolean;
   createdAt: string;
   metadata?: {
-    sentiment?: 'positive' | 'neutral' | 'negative';
+    sentiment?: "positive" | "neutral" | "negative";
     tags?: string[];
     complexity?: number;
   };
@@ -14,7 +14,7 @@ interface Message {
 
 interface ExportOptions {
   includeMetadata?: boolean;
-  formatStyle?: 'professional' | 'casual' | 'compact';
+  formatStyle?: "professional" | "casual" | "compact";
 }
 
 class ChatPDFExporter {
@@ -41,12 +41,12 @@ class ChatPDFExporter {
     headerText: [number, number, number];
   };
 
-  constructor(websiteName: string = 'SmartDoc') {
+  constructor(websiteName: string = "SmartDoc") {
     // PDF Configuration
     this.pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
     });
 
     // Website Name
@@ -77,7 +77,7 @@ class ChatPDFExporter {
     };
 
     // Set default font
-    this.pdf.setFont('helvetica');
+    this.pdf.setFont("helvetica");
   }
 
   // Advanced text parsing for markdown-like formatting
@@ -86,26 +86,28 @@ class ChatPDFExporter {
     pdf: jsPDF,
     x: number,
     y: number,
-    options: { align?: 'left' | 'right' } = {}
+    options: { align?: "left" | "right" } = {},
   ) {
     const parts = this.tokenizeText(text);
     let currentX = x;
 
     parts.forEach((part) => {
       switch (part.type) {
-        case 'bold':
-          pdf.setFont('helvetica', 'bold');
+        case "bold":
+          pdf.setFont("helvetica", "bold");
           break;
-        case 'italic':
-          pdf.setFont('helvetica', 'italic');
+        case "italic":
+          pdf.setFont("helvetica", "italic");
           break;
-        case 'normal':
-          pdf.setFont('helvetica', 'normal');
+        case "normal":
+          pdf.setFont("helvetica", "normal");
           break;
       }
 
-      if (options.align === 'right') {
-        pdf.text(part.text, this.pageWidth - this.margin - 5, y, { align: 'right' });
+      if (options.align === "right") {
+        pdf.text(part.text, this.pageWidth - this.margin - 5, y, {
+          align: "right",
+        });
       } else {
         pdf.text(part.text, currentX, y);
       }
@@ -129,14 +131,14 @@ class ChatPDFExporter {
       // Text before bold
       if (match.index > lastIndex) {
         tokens.push({
-          type: 'normal',
+          type: "normal",
           text: text.slice(lastIndex, match.index),
         });
       }
 
       // Bold text
       tokens.push({
-        type: 'bold',
+        type: "bold",
         text: match[1],
       });
 
@@ -146,7 +148,7 @@ class ChatPDFExporter {
     // Remaining text
     if (lastIndex < text.length) {
       tokens.push({
-        type: 'normal',
+        type: "normal",
         text: text.slice(lastIndex),
       });
     }
@@ -171,11 +173,11 @@ class ChatPDFExporter {
   private addHeader() {
     // Gradient-like header background
     this.pdf.setFillColor(...this.colors.header);
-    this.pdf.rect(0, 0, this.pageWidth, 25, 'F');
+    this.pdf.rect(0, 0, this.pageWidth, 25, "F");
 
     // Website Name with modern typography
     this.pdf.setFontSize(this.headerFontSize);
-    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setFont("helvetica", "bold");
     this.pdf.setTextColor(...this.colors.headerText);
 
     // Center the website name
@@ -194,7 +196,7 @@ class ChatPDFExporter {
 
   private addMessage(message: Message, options: ExportOptions = {}) {
     // Text processing with advanced formatting
-    const messageText = message.text || 'Loading...';
+    const messageText = message.text || "Loading...";
     const textLines = this.pdf.splitTextToSize(messageText, this.maxWidth);
     const textHeight = textLines.length * this.lineHeight + this.messageSpacing;
 
@@ -204,19 +206,23 @@ class ChatPDFExporter {
     // Message styling with subtle shadow effect
     const containerHeight = textHeight + 10;
     this.pdf.setFillColor(
-      ...(message.isUserMessage ? this.colors.userMessageBg : this.colors.assistantMessageBg)
+      ...(message.isUserMessage
+        ? this.colors.userMessageBg
+        : this.colors.assistantMessageBg),
     );
 
     // Rounded rectangle with subtle shadow
     this.pdf.setDrawColor(200, 200, 200);
     this.pdf.roundedRect(
-      message.isUserMessage ? this.pageWidth - this.margin - this.contentWidth : this.margin,
+      message.isUserMessage
+        ? this.pageWidth - this.margin - this.contentWidth
+        : this.margin,
       this.currentY - 5,
       this.contentWidth,
       containerHeight,
       2,
       2,
-      'FD'
+      "FD",
     );
 
     // Timestamp with improved styling
@@ -224,12 +230,14 @@ class ChatPDFExporter {
     this.pdf.setFontSize(8);
     this.pdf.setTextColor(...this.colors.timestamp);
 
-    const timestampText = `${message.isUserMessage ? 'You' : 'Assistant'} - ${timestamp}`;
+    const timestampText = `${message.isUserMessage ? "You" : "Assistant"} - ${timestamp}`;
     this.pdf.text(
       timestampText,
-      message.isUserMessage ? this.pageWidth - this.margin - 5 : this.margin + 5,
+      message.isUserMessage
+        ? this.pageWidth - this.margin - 5
+        : this.margin + 5,
       this.currentY + 3,
-      { align: message.isUserMessage ? 'right' : 'left' }
+      { align: message.isUserMessage ? "right" : "left" },
     );
 
     // Metadata display if enabled
@@ -237,15 +245,17 @@ class ChatPDFExporter {
       const metadataText = Object.entries(message.metadata)
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)
-        .join(' | ');
+        .join(" | ");
 
       this.pdf.setFontSize(8);
       this.pdf.setTextColor(...this.colors.timestamp);
       this.pdf.text(
         metadataText,
-        message.isUserMessage ? this.pageWidth - this.margin - 5 : this.margin + 5,
+        message.isUserMessage
+          ? this.pageWidth - this.margin - 5
+          : this.margin + 5,
         this.currentY + 10,
-        { align: message.isUserMessage ? 'right' : 'left' }
+        { align: message.isUserMessage ? "right" : "left" },
       );
     }
 
@@ -256,7 +266,9 @@ class ChatPDFExporter {
 
     textLines.forEach((line: string) => {
       if (message.isUserMessage) {
-        this.parseFormattedText(line, this.pdf, 0, this.currentY, { align: 'right' });
+        this.parseFormattedText(line, this.pdf, 0, this.currentY, {
+          align: "right",
+        });
       } else {
         this.parseFormattedText(line, this.pdf, this.margin + 5, this.currentY);
       }
@@ -270,8 +282,8 @@ class ChatPDFExporter {
     messages: Message[],
     options: ExportOptions = {
       includeMetadata: false,
-      formatStyle: 'professional',
-    }
+      formatStyle: "professional",
+    },
   ) {
     // Title page and header
     this.addHeader();
@@ -279,14 +291,15 @@ class ChatPDFExporter {
     // Comprehensive metadata
     this.pdf.setProperties({
       title: `${this.websiteName} Conversation History`,
-      subject: 'Detailed Chat Export',
+      subject: "Detailed Chat Export",
       creator: `${this.websiteName} Chat Exporter`,
       author: this.websiteName,
-      keywords: 'chat, conversation, export, pdf',
+      keywords: "chat, conversation, export, pdf",
     });
 
     // Adjust message order based on format style
-    const processedMessages = options.formatStyle === 'compact' ? messages : messages.reverse();
+    const processedMessages =
+      options.formatStyle === "compact" ? messages : messages.reverse();
 
     // Process messages with export options
     processedMessages.forEach((message) => this.addMessage(message, options));
@@ -305,7 +318,7 @@ class ChatPDFExporter {
         `${this.websiteName} | Page ${i} of ${pageCount} | Exported: ${exportTimestamp}`,
         this.pageWidth / 2,
         this.pageHeight - 10,
-        { align: 'center' }
+        { align: "center" },
       );
     }
 
@@ -313,4 +326,4 @@ class ChatPDFExporter {
   }
 }
 
-export default ChatPDFExporter
+export default ChatPDFExporter;

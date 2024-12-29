@@ -3,7 +3,7 @@ export const ai21Complete = async (prompt: string, apiKey: string) => {
   const response = await fetch("https://api.ai21.com/v1/j2/jumbo/complete", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

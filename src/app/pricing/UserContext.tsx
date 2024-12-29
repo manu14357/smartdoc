@@ -1,7 +1,7 @@
 // src/contexts/UserContext.tsx
-'use client'; // Ensure this is a client-side component
+"use client"; // Ensure this is a client-side component
 
-import React, { createContext, useState, ReactNode, useContext } from 'react';
+import React, { createContext, useState, ReactNode, useContext } from "react";
 
 // Define the shape of your User object
 interface User {

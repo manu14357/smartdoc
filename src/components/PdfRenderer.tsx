@@ -1,6 +1,6 @@
-'use client';
-import React from 'react';
-import { useState, useEffect, useRef } from 'react';
+"use client";
+import React from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -20,46 +20,45 @@ import {
   Trash2,
   Menu,
   X,
-} from 'lucide-react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useResizeDetector } from 'react-resize-detector';
-import SimpleBar from 'simplebar-react';
-import PdfFullscreen from './PdfFullscreen';
-import dynamic from 'next/dynamic';
+} from "lucide-react";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useResizeDetector } from "react-resize-detector";
+import SimpleBar from "simplebar-react";
+import PdfFullscreen from "./PdfFullscreen";
+import dynamic from "next/dynamic";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from './ui/tooltip';
+} from "./ui/tooltip";
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
   DialogHeader,
   DialogTitle,
-} from './ui/dialog';
+} from "./ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from './ui/dropdown-menu';
-import { cn } from '@/lib/utils';
-import { useToast } from './ui/use-toast';
+} from "./ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { useToast } from "./ui/use-toast";
 
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import 'react-quill/dist/quill.snow.css'; // Quill styles
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import "react-quill/dist/quill.snow.css"; // Quill styles
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -90,25 +89,27 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   const [scale, setScale] = useState<number>(1);
   const [rotation, setRotation] = useState<number>(0);
   const [renderedScale, setRenderedScale] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'single' | 'double'>('single');
+  const [viewMode, setViewMode] = useState<"single" | "double">("single");
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [isCommentsDialogOpen, setIsCommentsDialogOpen] = useState<boolean>(false);
-  const [isNotepadDialogOpen, setIsNotepadDialogOpen] = useState<boolean>(false);
+  const [isCommentsDialogOpen, setIsCommentsDialogOpen] =
+    useState<boolean>(false);
+  const [isNotepadDialogOpen, setIsNotepadDialogOpen] =
+    useState<boolean>(false);
   // Advanced editing modes
   const [commentMode, setCommentMode] = useState(false);
   const [noteMode, setNoteMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Comments state
   const [comments, setComments] = useState<Comment[]>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const savedComments = localStorage.getItem(`pdf-comments-${url}`);
       return savedComments ? JSON.parse(savedComments) : [];
     }
     return [];
   });
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
-  const [commentAuthor, setCommentAuthor] = useState('');
-  const [commentText, setCommentText] = useState('');
+  const [commentAuthor, setCommentAuthor] = useState("");
+  const [commentText, setCommentText] = useState("");
 
   const handleMobileMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -119,21 +120,23 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   };
   // Notes state
   const [notes, setNotes] = useState<Note[]>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const savedNotes = localStorage.getItem(`pdf-notes-${url}`);
       return savedNotes ? JSON.parse(savedNotes) : [];
     }
     return [];
   });
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [noteContent, setNoteContent] = useState('');
+  const [noteContent, setNoteContent] = useState("");
 
   // Search states
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<{ page: number; matches: number }[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<
+    { page: number; matches: number }[]
+  >([]);
 
   // Highlighted words
-  const [highlightedWord, setHighlightedWord] = useState<string>('');
+  const [highlightedWord, setHighlightedWord] = useState<string>("");
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -145,7 +148,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
       .string()
       .refine(
         (val) => Number(val) > 0 && Number(val) <= (numPages || 1),
-        'Page number is out of range'
+        "Page number is out of range",
       ),
   });
   type TPageSchema = z.infer<typeof pageSchema>;
@@ -156,7 +159,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
     formState: { errors },
     setValue,
   } = useForm<TPageSchema>({
-    defaultValues: { page: '1' },
+    defaultValues: { page: "1" },
     resolver: zodResolver(pageSchema),
   });
 
@@ -166,9 +169,9 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   const addComment = () => {
     if (!commentText.trim() || !commentAuthor.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'Please fill both Author and Comment text.',
-        variant: 'destructive',
+        title: "Validation Error",
+        description: "Please fill both Author and Comment text.",
+        variant: "destructive",
       });
       return;
     }
@@ -183,15 +186,18 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
 
     const updatedComments = [...comments, newComment];
     setComments(updatedComments);
-    localStorage.setItem(`pdf-comments-${url}`, JSON.stringify(updatedComments));
+    localStorage.setItem(
+      `pdf-comments-${url}`,
+      JSON.stringify(updatedComments),
+    );
 
     // Reset inputs
-    setCommentAuthor('');
-    setCommentText('');
+    setCommentAuthor("");
+    setCommentText("");
     setCommentMode(false);
 
     toast({
-      title: 'Comment Added',
+      title: "Comment Added",
       description: `A comment has been added for page ${currPage}.`,
     });
   };
@@ -208,31 +214,42 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
 
     const updatedComments = comments.map((c) =>
       c.id === editingComment.id
-        ? { ...c, author: commentAuthor, text: commentText, timestamp: Date.now() }
-        : c
+        ? {
+            ...c,
+            author: commentAuthor,
+            text: commentText,
+            timestamp: Date.now(),
+          }
+        : c,
     );
     setComments(updatedComments);
-    localStorage.setItem(`pdf-comments-${url}`, JSON.stringify(updatedComments));
+    localStorage.setItem(
+      `pdf-comments-${url}`,
+      JSON.stringify(updatedComments),
+    );
 
     // Reset
     setEditingComment(null);
-    setCommentAuthor('');
-    setCommentText('');
+    setCommentAuthor("");
+    setCommentText("");
 
     toast({
-      title: 'Comment Updated',
-      description: 'The comment was successfully updated.',
+      title: "Comment Updated",
+      description: "The comment was successfully updated.",
     });
   };
 
   const removeComment = (commentId: string) => {
     const updatedComments = comments.filter((c) => c.id !== commentId);
     setComments(updatedComments);
-    localStorage.setItem(`pdf-comments-${url}`, JSON.stringify(updatedComments));
+    localStorage.setItem(
+      `pdf-comments-${url}`,
+      JSON.stringify(updatedComments),
+    );
 
     toast({
-      title: 'Comment Removed',
-      description: 'The comment was successfully removed.',
+      title: "Comment Removed",
+      description: "The comment was successfully removed.",
     });
   };
 
@@ -240,9 +257,9 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   const addNote = () => {
     if (!noteContent.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'Note content cannot be empty.',
-        variant: 'destructive',
+        title: "Validation Error",
+        description: "Note content cannot be empty.",
+        variant: "destructive",
       });
       return;
     }
@@ -258,12 +275,12 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
     localStorage.setItem(`pdf-notes-${url}`, JSON.stringify(updatedNotes));
 
     // Reset
-    setNoteContent('');
+    setNoteContent("");
     setNoteMode(false);
 
     toast({
-      title: 'Note Added',
-      description: 'A new note has been successfully added to the notepad.',
+      title: "Note Added",
+      description: "A new note has been successfully added to the notepad.",
     });
   };
 
@@ -279,18 +296,18 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
     const updatedNotes = notes.map((n) =>
       n.id === editingNote.id
         ? { ...n, content: noteContent, timestamp: Date.now() }
-        : n
+        : n,
     );
     setNotes(updatedNotes);
     localStorage.setItem(`pdf-notes-${url}`, JSON.stringify(updatedNotes));
 
     // Reset
     setEditingNote(null);
-    setNoteContent('');
+    setNoteContent("");
 
     toast({
-      title: 'Note Updated',
-      description: 'The note was successfully updated.',
+      title: "Note Updated",
+      description: "The note was successfully updated.",
     });
   };
 
@@ -300,15 +317,15 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
     localStorage.setItem(`pdf-notes-${url}`, JSON.stringify(updatedNotes));
 
     toast({
-      title: 'Note Removed',
-      description: 'The note was successfully removed.',
+      title: "Note Removed",
+      description: "The note was successfully removed.",
     });
   };
 
   // ----- Page Navigation -----
   const onSubmitPage = (data: TPageSchema) => {
     setCurrPage(Number(data.page));
-    setValue('page', data.page);
+    setValue("page", data.page);
   };
 
   // ----- Zoom & Rotation -----
@@ -328,7 +345,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   // ----- Search Logic (Advanced) -----
   const performSearch = async () => {
     if (!searchQuery.trim()) {
-      setHighlightedWord('');
+      setHighlightedWord("");
       return;
     }
 
@@ -340,9 +357,11 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item) => (item as { str: string }).str).join(' ');
+        const pageText = textContent.items
+          .map((item) => (item as { str: string }).str)
+          .join(" ");
 
-        const regex = new RegExp(searchQuery, 'gi');
+        const regex = new RegExp(searchQuery, "gi");
         const matches = (pageText.match(regex) || []).length;
         totalMatches += matches;
 
@@ -357,24 +376,24 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
       if (results.length > 0) {
         const firstMatch = results[0];
         setCurrPage(firstMatch.page);
-        setValue('page', String(firstMatch.page));
+        setValue("page", String(firstMatch.page));
 
         toast({
-          title: 'Search Results',
+          title: "Search Results",
           description: `Found ${totalMatches} match(es) across ${results.length} page(s). Jumped to the first match.`,
         });
       } else {
         toast({
-          title: 'No Results',
-          description: 'No matches found for your search query.',
-          variant: 'destructive',
+          title: "No Results",
+          description: "No matches found for your search query.",
+          variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: 'Search Error',
-        description: 'There was an error performing the search.',
-        variant: 'destructive',
+        title: "Search Error",
+        description: "There was an error performing the search.",
+        variant: "destructive",
       });
     }
   };
@@ -383,29 +402,38 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768 && viewMode === 'double') {
-        setViewMode('single');
+      if (window.innerWidth < 768 && viewMode === "double") {
+        setViewMode("single");
       }
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, [viewMode]);
 
   // ----- Highlighting Logic -----
-  const customTextRenderer = (props: { str: string; pageIndex: number; pageNumber: number; itemIndex: number }) => {
+  const customTextRenderer = (props: {
+    str: string;
+    pageIndex: number;
+    pageNumber: number;
+    itemIndex: number;
+  }) => {
     const { str } = props;
     if (!highlightedWord) return str;
-    const regex = new RegExp(`(${highlightedWord})`, 'gi');
+    const regex = new RegExp(`(${highlightedWord})`, "gi");
     const parts = str.split(regex);
-  
-    return parts.map((part, i) =>
-      regex.test(part) ? (
-        React.createElement('span', { key: i, style: { backgroundColor: 'yellow' } }, part)
-      ) : (
-        part
+
+    return parts
+      .map((part, i) =>
+        regex.test(part)
+          ? React.createElement(
+              "span",
+              { key: i, style: { backgroundColor: "yellow" } },
+              part,
+            )
+          : part,
       )
-    ).join('');
+      .join("");
   };
 
   // ----- Mobile Gesture Handlers -----
@@ -437,13 +465,13 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
         // Swipe Right - Previous Page
         const newPage = Math.max(currPage - 1, 1);
         setCurrPage(newPage);
-        setValue('page', String(newPage));
+        setValue("page", String(newPage));
       } else if (deltaX < -50) {
         // Swipe Left - Next Page
         if (!numPages) return;
         const newPage = Math.min(currPage + 1, numPages);
         setCurrPage(newPage);
-        setValue('page', String(newPage));
+        setValue("page", String(newPage));
       }
     }
 
@@ -463,149 +491,164 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
       <div className="h-16 w-full border-b border-zinc-200 flex items-center justify-between px-4">
         {/* Mobile Menu Button */}
         {isMobile && (
-  <div className="relative">
-    <DropdownMenu open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="md:hidden relative z-50 hover:bg-gray-100 transition-colors"
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-5 w-5 text-gray-700" />
-          ) : (
-            <Menu className="h-5 w-5 text-gray-700" />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        className="z-50 w-72 p-2 mt-2 border border-gray-200 rounded-lg shadow-lg bg-white animate-in fade-in-0 zoom-in-95"
-        onInteractOutside={handleMobileMenuClose}
-        onEscapeKeyDown={handleMobileMenuClose}
-        align="start"
-        sideOffset={5}
-      >
-        <div className="grid gap-2">
-          {/* Zoom Section */}
-          <div className="px-2 py-1.5">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Zoom Controls</p>
-            <div className="grid grid-cols-2 gap-2">
-              <DropdownMenuItem 
-                className="flex items-center justify-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  handleZoomOut();
-                  handleMobileMenuClose();
-                }}
+          <div className="relative">
+            <DropdownMenu
+              open={isMobileMenuOpen}
+              onOpenChange={setIsMobileMenuOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden relative z-50 hover:bg-gray-100 transition-colors"
+                >
+                  {isMobileMenuOpen ? (
+                    <X className="h-5 w-5 text-gray-700" />
+                  ) : (
+                    <Menu className="h-5 w-5 text-gray-700" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="z-50 w-72 p-2 mt-2 border border-gray-200 rounded-lg shadow-lg bg-white animate-in fade-in-0 zoom-in-95"
+                onInteractOutside={handleMobileMenuClose}
+                onEscapeKeyDown={handleMobileMenuClose}
+                align="start"
+                sideOffset={5}
               >
-                <ZoomOut className="h-4 w-4 mr-2" />
-                <span>Zoom Out</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem 
-                className="flex items-center justify-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  handleZoomIn();
-                  handleMobileMenuClose();
-                }}
-              >
-                <ZoomIn className="h-4 w-4 mr-2" />
-                <span>Zoom In</span>
-              </DropdownMenuItem>
-            </div>
-          </div>
+                <div className="grid gap-2">
+                  {/* Zoom Section */}
+                  <div className="px-2 py-1.5">
+                    <p className="text-xs font-semibold text-gray-500 mb-2">
+                      Zoom Controls
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <DropdownMenuItem
+                        className="flex items-center justify-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          handleZoomOut();
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <ZoomOut className="h-4 w-4 mr-2" />
+                        <span>Zoom Out</span>
+                      </DropdownMenuItem>
 
-          <DropdownMenuSeparator className="my-1 border-t border-gray-200" />
-          
-          {/* Document Actions */}
-          <div className="px-2 py-1.5">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Document Actions</p>
-            <div className="grid gap-1.5">
-              <DropdownMenuItem 
-                className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  setRotation((prev) => prev + 90);
-                  handleMobileMenuClose();
-                }}
-              >
-                <RotateCw className="h-4 w-4 mr-3 text-gray-600" />
-                <span>Rotate Page</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem 
-                className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  window.open(url);
-                  handleMobileMenuClose();
-                }}
-              >
-                <Download className="h-4 w-4 mr-3 text-gray-600" />
-                <span>Download PDF</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem 
-                className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  handlePrint();
-                  handleMobileMenuClose();
-                }}
-              >
-                <Printer className="h-4 w-4 mr-3 text-gray-600" />
-                <span>Print Document</span>
-              </DropdownMenuItem>
-            </div>
-          </div>
+                      <DropdownMenuItem
+                        className="flex items-center justify-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          handleZoomIn();
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        <span>Zoom In</span>
+                      </DropdownMenuItem>
+                    </div>
+                  </div>
 
-          <DropdownMenuSeparator className="my-1 border-t border-gray-200" />
-          
-          {/* Tools */}
-          <div className="px-2 py-1.5">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Tools</p>
-            <div className="grid gap-1.5">
-              <DropdownMenuItem 
-                className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  setIsNotepadDialogOpen(true);
-                  setNoteMode(true);
-                  handleMobileMenuClose();
-                }}
-              >
-                <StickyNote className="h-4 w-4 mr-3 text-gray-600" />
-                <span>Open Notepad</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem 
-                className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  setIsCommentsDialogOpen(true);
-                  handleMobileMenuClose();
-                }}
-              >
-                <MessageSquare className="h-4 w-4 mr-3 text-gray-600" />
-                <span>View Comments</span>
-              </DropdownMenuItem>
-            </div>
+                  <DropdownMenuSeparator className="my-1 border-t border-gray-200" />
+
+                  {/* Document Actions */}
+                  <div className="px-2 py-1.5">
+                    <p className="text-xs font-semibold text-gray-500 mb-2">
+                      Document Actions
+                    </p>
+                    <div className="grid gap-1.5">
+                      <DropdownMenuItem
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          setRotation((prev) => prev + 90);
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <RotateCw className="h-4 w-4 mr-3 text-gray-600" />
+                        <span>Rotate Page</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          window.open(url);
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-3 text-gray-600" />
+                        <span>Download PDF</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          handlePrint();
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <Printer className="h-4 w-4 mr-3 text-gray-600" />
+                        <span>Print Document</span>
+                      </DropdownMenuItem>
+                    </div>
+                  </div>
+
+                  <DropdownMenuSeparator className="my-1 border-t border-gray-200" />
+
+                  {/* Tools */}
+                  <div className="px-2 py-1.5">
+                    <p className="text-xs font-semibold text-gray-500 mb-2">
+                      Tools
+                    </p>
+                    <div className="grid gap-1.5">
+                      <DropdownMenuItem
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          setIsNotepadDialogOpen(true);
+                          setNoteMode(true);
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <StickyNote className="h-4 w-4 mr-3 text-gray-600" />
+                        <span>Open Notepad</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          setIsCommentsDialogOpen(true);
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-3 text-gray-600" />
+                        <span>View Comments</span>
+                      </DropdownMenuItem>
+                    </div>
+                  </div>
+
+                  {!isMobile && (
+                    <>
+                      <DropdownMenuSeparator className="my-1 border-t border-gray-200" />
+                      <DropdownMenuItem
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+                        onClick={() => {
+                          setViewMode(
+                            viewMode === "single" ? "double" : "single",
+                          );
+                          handleMobileMenuClose();
+                        }}
+                      >
+                        <BookOpen className="h-4 w-4 mr-3 text-gray-600" />
+                        <span>
+                          {viewMode === "single"
+                            ? "Double Page"
+                            : "Single Page"}
+                        </span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          
-          {!isMobile && (
-            <>
-              <DropdownMenuSeparator className="my-1 border-t border-gray-200" />
-              <DropdownMenuItem 
-                className="flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
-                onClick={() => {
-                  setViewMode(viewMode === 'single' ? 'double' : 'single');
-                  handleMobileMenuClose();
-                }}
-              >
-                <BookOpen className="h-4 w-4 mr-3 text-gray-600" />
-                <span>{viewMode === 'single' ? 'Double Page' : 'Single Page'}</span>
-              </DropdownMenuItem>
-            </>
-          )}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
-)}
+        )}
 
         {/* Left side toolbar */}
         <div className="flex items-center gap-2">
@@ -623,7 +666,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
               onClick={() => {
                 const newPage = Math.max(currPage - 1, 1);
                 setCurrPage(newPage);
-                setValue('page', String(newPage));
+                setValue("page", String(newPage));
               }}
               variant="ghost"
               size="sm"
@@ -637,15 +680,16 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
               className="flex items-center gap-1.5"
             >
               <Input
-                {...register('page')}
-                className={cn('w-12 h-8', errors.page && 'focus-visible:ring-red-500')}
+                {...register("page")}
+                className={cn(
+                  "w-12 h-8",
+                  errors.page && "focus-visible:ring-red-500",
+                )}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSubmit(onSubmitPage)();
+                  if (e.key === "Enter") handleSubmit(onSubmitPage)();
                 }}
               />
-              <span className="text-zinc-700 text-sm">
-                / {numPages ?? 'x'}
-              </span>
+              <span className="text-zinc-700 text-sm">/ {numPages ?? "x"}</span>
             </form>
 
             <Button
@@ -653,7 +697,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
               onClick={() => {
                 const newPage = Math.min(currPage + 1, numPages || 1);
                 setCurrPage(newPage);
-                setValue('page', String(newPage));
+                setValue("page", String(newPage));
               }}
               variant="ghost"
               size="sm"
@@ -668,7 +712,12 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
         <div className="hidden md:flex items-center gap-2">
           {/* Zoom controls */}
           <div className="flex items-center gap-1.5 border-r border-zinc-200 pr-4">
-            <Button onClick={handleZoomOut} variant="ghost" size="sm" className="h-8">
+            <Button
+              onClick={handleZoomOut}
+              variant="ghost"
+              size="sm"
+              className="h-8"
+            >
               <ZoomOut className="h-4 w-4" />
             </Button>
 
@@ -681,34 +730,66 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setScale(0.5)}>50%</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setScale(1)}>100%</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setScale(1.5)}>150%</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setScale(2)}>200%</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setScale(0.5)}>
+                  50%
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setScale(1)}>
+                  100%
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setScale(1.5)}>
+                  150%
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setScale(2)}>
+                  200%
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setScale(1)}>Reset</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setScale(1)}>
+                  Reset
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button onClick={handleZoomIn} variant="ghost" size="sm" className="h-8">
+            <Button
+              onClick={handleZoomIn}
+              variant="ghost"
+              size="sm"
+              className="h-8"
+            >
               <ZoomIn className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Rotate, Download, Print, View mode */}
           <div className="flex items-center gap-1.5">
-            <Button onClick={() => setRotation((prev) => prev + 90)} variant="ghost" size="sm" className="h-8">
+            <Button
+              onClick={() => setRotation((prev) => prev + 90)}
+              variant="ghost"
+              size="sm"
+              className="h-8"
+            >
               <RotateCw className="h-4 w-4" />
             </Button>
-            <Button onClick={() => window.open(url)} variant="ghost" size="sm" className="h-8">
+            <Button
+              onClick={() => window.open(url)}
+              variant="ghost"
+              size="sm"
+              className="h-8"
+            >
               <Download className="h-4 w-4" />
             </Button>
-            <Button onClick={handlePrint} variant="ghost" size="sm" className="h-8">
+            <Button
+              onClick={handlePrint}
+              variant="ghost"
+              size="sm"
+              className="h-8"
+            >
               <Printer className="h-4 w-4" />
             </Button>
             {!isMobile && (
               <Button
-                onClick={() => setViewMode(viewMode === 'single' ? 'double' : 'single')}
+                onClick={() =>
+                  setViewMode(viewMode === "single" ? "double" : "single")
+                }
                 variant="ghost"
                 size="sm"
                 className="h-8"
@@ -722,7 +803,10 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
           {/* Comments, Notes, and Search */}
           <div className="flex items-center gap-1.5">
             {/* Comments */}
-            <Dialog open={isCommentsDialogOpen} onOpenChange={setIsCommentsDialogOpen}>
+            <Dialog
+              open={isCommentsDialogOpen}
+              onOpenChange={setIsCommentsDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-1.5">
                   <MessageSquare className="h-4 w-4" />
@@ -758,8 +842,8 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                           onClick={() => {
                             setCommentMode(false);
                             setEditingComment(null);
-                            setCommentAuthor('');
-                            setCommentText('');
+                            setCommentAuthor("");
+                            setCommentText("");
                           }}
                         >
                           Cancel
@@ -780,9 +864,14 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                   )}
 
                   <div>
-                    <h3 className="font-semibold mb-2 text-md">Existing Comments (Page {currPage})</h3>
-                    {comments.filter((c) => c.page === currPage).length === 0 ? (
-                      <p className="text-sm text-zinc-500">No comments on this page.</p>
+                    <h3 className="font-semibold mb-2 text-md">
+                      Existing Comments (Page {currPage})
+                    </h3>
+                    {comments.filter((c) => c.page === currPage).length ===
+                    0 ? (
+                      <p className="text-sm text-zinc-500">
+                        No comments on this page.
+                      </p>
                     ) : (
                       comments
                         .filter((c) => c.page === currPage)
@@ -793,14 +882,24 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                             className="bg-green-50 border-l-4 border-green-500 p-2 mb-2 rounded flex justify-between items-start"
                           >
                             <div>
-                              <p className="text-xs font-semibold">{c.author}</p>
+                              <p className="text-xs font-semibold">
+                                {c.author}
+                              </p>
                               <p className="text-sm">{c.text}</p>
                             </div>
                             <div className="flex gap-1.5">
-                              <Button variant="ghost" size="sm" onClick={() => editComment(c)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => editComment(c)}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => removeComment(c.id)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeComment(c.id)}
+                              >
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
@@ -813,7 +912,10 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
             </Dialog>
 
             {/* Notepad */}
-            <Dialog open={isNotepadDialogOpen} onOpenChange={setIsNotepadDialogOpen}>
+            <Dialog
+              open={isNotepadDialogOpen}
+              onOpenChange={setIsNotepadDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-1.5">
                   <StickyNote className="h-4 w-4" />
@@ -845,7 +947,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                           onClick={() => {
                             setNoteMode(false);
                             setEditingNote(null);
-                            setNoteContent('');
+                            setNoteContent("");
                           }}
                         >
                           Cancel
@@ -883,10 +985,18 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                               dangerouslySetInnerHTML={{ __html: n.content }}
                             ></div>
                             <div className="flex gap-1.5">
-                              <Button variant="ghost" size="sm" onClick={() => editNote(n)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => editNote(n)}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={() => removeNote(n.id)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeNote(n.id)}
+                              >
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
@@ -917,7 +1027,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') performSearch();
+                      if (e.key === "Enter") performSearch();
                     }}
                   />
                   <Button onClick={performSearch}>Search</Button>
@@ -928,15 +1038,22 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
                     ) : (
                       <div>
                         <p className="text-sm text-zinc-700 mb-2">
-                          Total Matches: {searchResults.reduce((acc, curr) => acc + curr.matches, 0)}
+                          Total Matches:{" "}
+                          {searchResults.reduce(
+                            (acc, curr) => acc + curr.matches,
+                            0,
+                          )}
                         </p>
                         {searchResults.map((result) => (
-                          <div key={result.page} className="flex justify-between items-center">
+                          <div
+                            key={result.page}
+                            className="flex justify-between items-center"
+                          >
                             <Button
                               variant="ghost"
                               onClick={() => {
                                 setCurrPage(result.page);
-                                setValue('page', String(result.page));
+                                setValue("page", String(result.page));
                               }}
                               className="flex-1 text-left"
                             >
@@ -964,7 +1081,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
             onClick={() => {
               const newPage = Math.max(1, currPage - 1);
               setCurrPage(newPage);
-              setValue('page', String(newPage));
+              setValue("page", String(newPage));
             }}
           >
             Previous
@@ -977,7 +1094,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
               if (!numPages) return;
               const newPage = Math.min(currPage + 1, numPages);
               setCurrPage(newPage);
-              setValue('page', String(newPage));
+              setValue("page", String(newPage));
             }}
           >
             Next
@@ -998,9 +1115,9 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
               }
               onLoadError={() => {
                 toast({
-                  title: 'Error Loading PDF',
-                  description: 'Check the file or try again later.',
-                  variant: 'destructive',
+                  title: "Error Loading PDF",
+                  description: "Check the file or try again later.",
+                  variant: "destructive",
                 });
               }}
               onLoadSuccess={({ numPages }) => setNumPages(numPages)}
@@ -1008,46 +1125,60 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
             >
               <div
                 className={cn(
-                  'flex justify-center relative',
-                  viewMode === 'double' && !isMobile ? 'gap-4' : ''
+                  "flex justify-center relative",
+                  viewMode === "double" && !isMobile ? "gap-4" : "",
                 )}
               >
                 {isLoading && renderedScale ? (
                   <Page
                     pageNumber={currPage}
-                    width={width ? (viewMode === 'double' && !isMobile ? width / 2 : width) : 1}
+                    width={
+                      width
+                        ? viewMode === "double" && !isMobile
+                          ? width / 2
+                          : width
+                        : 1
+                    }
                     scale={scale}
                     rotate={rotation}
                     key={`loading-${renderedScale}`}
                   />
                 ) : null}
-<Page
-  pageNumber={currPage}
-  className={isLoading ? 'hidden' : ''}
-  width={width ? (viewMode === 'double' && !isMobile ? width / 2 : width) : 1}
-  scale={scale}
-  rotate={rotation}
-  key={`page-${scale}`}
-  loading={
-    <div className="flex justify-center">
-      <Loader2 className="my-24 h-6 w-6 animate-spin" />
-    </div>
-  }
-  onRenderSuccess={() => setRenderedScale(scale)}
-  renderTextLayer={true}
-  customTextRenderer={customTextRenderer} // Apply custom text renderer
-/>
+                <Page
+                  pageNumber={currPage}
+                  className={isLoading ? "hidden" : ""}
+                  width={
+                    width
+                      ? viewMode === "double" && !isMobile
+                        ? width / 2
+                        : width
+                      : 1
+                  }
+                  scale={scale}
+                  rotate={rotation}
+                  key={`page-${scale}`}
+                  loading={
+                    <div className="flex justify-center">
+                      <Loader2 className="my-24 h-6 w-6 animate-spin" />
+                    </div>
+                  }
+                  onRenderSuccess={() => setRenderedScale(scale)}
+                  renderTextLayer={true}
+                  customTextRenderer={customTextRenderer} // Apply custom text renderer
+                />
                 {/* If in double mode, show next page side-by-side when available */}
-                {viewMode === 'double' && !isMobile && currPage < (numPages || 1) && (
-                  <Page
-                    pageNumber={currPage + 1}
-                    width={width ? width / 2 : 1}
-                    scale={scale}
-                    rotate={rotation}
-                    renderTextLayer={true}
-                    customTextRenderer={customTextRenderer}
-                  />
-                )}
+                {viewMode === "double" &&
+                  !isMobile &&
+                  currPage < (numPages || 1) && (
+                    <Page
+                      pageNumber={currPage + 1}
+                      width={width ? width / 2 : 1}
+                      scale={scale}
+                      rotate={rotation}
+                      renderTextLayer={true}
+                      customTextRenderer={customTextRenderer}
+                    />
+                  )}
               </div>
             </Document>
           </div>
@@ -1058,7 +1189,7 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
       {errors.page && (
         <div className="fixed bottom-20 left-0 right-0 flex justify-center">
           <div className="bg-red-500 text-white px-4 py-2 rounded-md">
-            {errors.page.message || 'Invalid page number.'}
+            {errors.page.message || "Invalid page number."}
           </div>
         </div>
       )}
@@ -1066,4 +1197,4 @@ const PdfRenderer = ({ url }: PdfRendererProps) => {
   );
 };
 
-export default PdfRenderer
+export default PdfRenderer;

@@ -1,34 +1,34 @@
 // AnimatedComponents.tsx
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { ReactNode } from 'react'
-import { FileText, Zap, Shield } from 'lucide-react'
+import { motion } from "framer-motion";
+import { ReactNode } from "react";
+import { FileText, Zap, Shield } from "lucide-react";
 
 interface AnimatedHeroProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 interface Feature {
-  icon: ReactNode
-  title: string
-  description: string
+  icon: ReactNode;
+  title: string;
+  description: string;
 }
 
 interface AnimatedFeaturesProps {
-  features: Feature[]
+  features: Feature[];
 }
 
 interface AnimatedTestimonialProps {
-  content: string
-  author: string
-  role: string
+  content: string;
+  author: string;
+  role: string;
 }
 
 export const fadeIn = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-}
+  visible: { opacity: 1, y: 0 },
+};
 
 export const AnimatedHero: React.FC<AnimatedHeroProps> = ({ children }) => {
   return (
@@ -40,10 +40,12 @@ export const AnimatedHero: React.FC<AnimatedHeroProps> = ({ children }) => {
     >
       {children}
     </motion.div>
-  )
-}
+  );
+};
 
-export const AnimatedFeatures: React.FC<AnimatedFeaturesProps> = ({ features }) => {
+export const AnimatedFeatures: React.FC<AnimatedFeaturesProps> = ({
+  features,
+}) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
       {features.map((feature, index) => (
@@ -64,10 +66,14 @@ export const AnimatedFeatures: React.FC<AnimatedFeaturesProps> = ({ features }) 
         </motion.div>
       ))}
     </div>
-  )
-}
+  );
+};
 
-export const AnimatedTestimonial: React.FC<AnimatedTestimonialProps> = ({ content, author, role }) => {
+export const AnimatedTestimonial: React.FC<AnimatedTestimonialProps> = ({
+  content,
+  author,
+  role,
+}) => {
   return (
     <motion.div
       initial="hidden"
@@ -82,5 +88,5 @@ export const AnimatedTestimonial: React.FC<AnimatedTestimonialProps> = ({ conten
         <p className="text-sm text-gray-500">{role}</p>
       </div>
     </motion.div>
-  )
-}
+  );
+};

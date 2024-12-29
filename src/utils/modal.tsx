@@ -1,10 +1,10 @@
 // ./ui/modal.tsx
 
-import { FC, ReactNode } from 'react'
+import { FC, ReactNode } from "react";
 
 interface ModalProps {
-  onClose: () => void
-  children: ReactNode
+  onClose: () => void;
+  children: ReactNode;
 }
 
 export const Modal: FC<ModalProps> = ({ onClose, children }) => {
@@ -20,5 +20,5 @@ export const Modal: FC<ModalProps> = ({ onClose, children }) => {
         <div>{children}</div>
       </div>
     </div>
-  )
-}
+  );
+};

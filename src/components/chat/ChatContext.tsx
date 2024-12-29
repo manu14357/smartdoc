@@ -5,13 +5,13 @@ import React, {
   useState,
   useCallback,
   useEffect,
-} from 'react';
-import { useToast } from '../ui/use-toast';
-import { useMutation, InfiniteData } from '@tanstack/react-query';
-import { trpc } from '@/app/_trpc/client';
-import { INFINITE_QUERY_LIMIT } from '@/config/infinite-query';
+} from "react";
+import { useToast } from "../ui/use-toast";
+import { useMutation, InfiniteData } from "@tanstack/react-query";
+import { trpc } from "@/app/_trpc/client";
+import { INFINITE_QUERY_LIMIT } from "@/config/infinite-query";
 
-type MessageStatus = 'sending' | 'sent' | 'error' | 'seen';
+type MessageStatus = "sending" | "sent" | "error" | "seen";
 
 interface Message {
   id: string;
@@ -47,7 +47,7 @@ type StreamResponse = {
 
 export const ChatContext = createContext<StreamResponse>({
   addMessage: () => {},
-  message: '',
+  message: "",
   handleInputChange: () => {},
   isLoading: false,
   isDrafting: false,
@@ -64,15 +64,15 @@ interface Props {
 }
 
 export const ChatContextProvider = ({ fileId, children }: Props) => {
-  const [message, setMessage] = useState<string>('');
+  const [message, setMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isDrafting, setIsDrafting] = useState<boolean>(false);
   const [typingIndicator, setTypingIndicator] = useState<boolean>(false);
 
   const utils = trpc.useContext();
   const { toast } = useToast();
-  const backupMessage = useRef<string>('');
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const backupMessage = useRef<string>("");
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Initialize with null
 
   // Debounced typing indicator
   useEffect(() => {
@@ -97,10 +97,10 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
 
   const { mutate: sendMessage } = useMutation({
     mutationFn: async ({ message }: { message: string }) => {
-      const response = await fetch('/api/message', {
-        method: 'POST',
+      const response = await fetch("/api/message", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           fileId,
@@ -109,7 +109,7 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error("Failed to send message");
       }
 
       // Assuming the API returns a ReadableStream for streaming responses
@@ -118,7 +118,7 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
     onMutate: async ({ message }) => {
       // Backup the current message in case of error
       backupMessage.current = message;
-      setMessage('');
+      setMessage("");
       setIsDrafting(false);
 
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
@@ -133,7 +133,9 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
       // Optimistically update to the new value
       utils.getFileMessages.setInfiniteData(
         { fileId, limit: INFINITE_QUERY_LIMIT },
-        (old: InfiniteData<MessagePage> | undefined): InfiniteData<MessagePage> | undefined => {
+        (
+          old: InfiniteData<MessagePage> | undefined,
+        ): InfiniteData<MessagePage> | undefined => {
           if (!old) return undefined;
 
           const newPages = [...old.pages];
@@ -145,7 +147,7 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
               id: crypto.randomUUID(), // Ensures 'id' is a string
               text: message,
               isUserMessage: true,
-              status: 'sending', // 'sending' is a valid MessageStatus
+              status: "sending", // 'sending' is a valid MessageStatus
             },
             ...latestPage.messages,
           ];
@@ -160,14 +162,15 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
           });
 
           return { ...old, pages: newPages };
-        }
+        },
       );
 
       setIsLoading(true);
 
       // Return the context with the previous messages for potential rollback
       return {
-        previousMessages: previousMessages?.pages.flatMap((page) => page.messages) ?? [],
+        previousMessages:
+          previousMessages?.pages.flatMap((page) => page.messages) ?? [],
       };
     },
     onSuccess: async (stream) => {
@@ -175,16 +178,16 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
 
       if (!stream) {
         return toast({
-          title: 'There was a problem sending this message',
-          description: 'Please refresh this page and try again',
-          variant: 'destructive',
+          title: "There was a problem sending this message",
+          description: "Please refresh this page and try again",
+          variant: "destructive",
         });
       }
 
       const reader = stream.getReader();
       const decoder = new TextDecoder();
       let done = false;
-      let accResponse = '';
+      let accResponse = "";
 
       while (!done) {
         const { value, done: doneReading } = await reader.read();
@@ -195,11 +198,13 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
         // Update the AI response message with the accumulated response
         utils.getFileMessages.setInfiniteData(
           { fileId, limit: INFINITE_QUERY_LIMIT },
-          (old: InfiniteData<MessagePage> | undefined): InfiniteData<MessagePage> | undefined => {
+          (
+            old: InfiniteData<MessagePage> | undefined,
+          ): InfiniteData<MessagePage> | undefined => {
             if (!old) return old;
 
             const isAiResponseCreated = old.pages.some((page) =>
-              page.messages.some((message) => message.id === 'ai-response')
+              page.messages.some((message) => message.id === "ai-response"),
             );
 
             const updatedPages = old.pages.map((page) => {
@@ -211,24 +216,24 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
                   updatedMessages = [
                     {
                       createdAt: new Date().toISOString(),
-                      id: 'ai-response',
+                      id: "ai-response",
                       text: accResponse,
                       isUserMessage: false,
-                      status: 'sent' as MessageStatus, // Explicit type assertion
+                      status: "sent" as MessageStatus, // Explicit type assertion
                     },
                     ...page.messages.map((msg) => ({
                       ...msg,
-                      status: msg.isUserMessage ? 'sent' : msg.status, // 'sent' is valid
+                      status: msg.isUserMessage ? "sent" : msg.status, // 'sent' is valid
                     })),
                   ];
                 } else {
                   // If AI response exists, update its text and status
                   updatedMessages = page.messages.map((message) => {
-                    if (message.id === 'ai-response') {
+                    if (message.id === "ai-response") {
                       return {
                         ...message,
                         text: accResponse,
-                        status: 'sent' as MessageStatus, // Explicit type assertion
+                        status: "sent" as MessageStatus, // Explicit type assertion
                       };
                     }
                     return message;
@@ -242,7 +247,7 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
             });
 
             return { ...old, pages: updatedPages };
-          }
+          },
         );
       }
     },
@@ -251,29 +256,33 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
       setMessage(backupMessage.current);
       utils.getFileMessages.setInfiniteData(
         { fileId, limit: INFINITE_QUERY_LIMIT },
-        (old: InfiniteData<MessagePage> | undefined): InfiniteData<MessagePage> | undefined => {
+        (
+          old: InfiniteData<MessagePage> | undefined,
+        ): InfiniteData<MessagePage> | undefined => {
           if (!old || !context) return old;
           return {
             pages: [
               {
                 messages: context.previousMessages,
                 nextCursor:
-                  old.pages[0]?.nextCursor !== undefined ? old.pages[0].nextCursor : undefined,
+                  old.pages[0]?.nextCursor !== undefined
+                    ? old.pages[0].nextCursor
+                    : undefined,
               },
               ...old.pages.slice(1),
             ],
             pageParams: old.pageParams,
           };
-        }
+        },
       );
 
       toast({
-        title: 'Message failed to send',
-        description: 'Click to retry',
-        variant: 'destructive',
+        title: "Message failed to send",
+        description: "Click to retry",
+        variant: "destructive",
         action: (
           <button
-            onClick={() => retryMessage(context?.previousMessages[0]?.id ?? '')}
+            onClick={() => retryMessage(context?.previousMessages[0]?.id ?? "")}
             className="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-500"
           >
             Retry
@@ -283,7 +292,10 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
     },
     onSettled: async () => {
       setIsLoading(false);
-      await utils.getFileMessages.invalidate({ fileId, limit: INFINITE_QUERY_LIMIT });
+      await utils.getFileMessages.invalidate({
+        fileId,
+        limit: INFINITE_QUERY_LIMIT,
+      });
     },
   });
 
@@ -291,50 +303,54 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setMessage(e.target.value);
     },
-    []
+    [],
   );
 
   const resetMessage = useCallback(() => {
-    setMessage('');
+    setMessage("");
     setIsDrafting(false);
   }, []);
 
   const retryMessage = useCallback(
     (messageId: string) => {
-      const messages = utils.getFileMessages.getInfiniteData({
-        fileId,
-        limit: INFINITE_QUERY_LIMIT,
-      })?.pages.flatMap((page) => page.messages);
+      const messages = utils.getFileMessages
+        .getInfiniteData({
+          fileId,
+          limit: INFINITE_QUERY_LIMIT,
+        })
+        ?.pages.flatMap((page) => page.messages);
       const messageToRetry = messages?.find((msg) => msg.id === messageId);
 
       if (messageToRetry) {
         sendMessage({ message: messageToRetry.text });
       }
     },
-    [fileId, utils, sendMessage]
+    [fileId, utils, sendMessage],
   );
 
   const markMessageAsSeen = useCallback(
     (messageId: string) => {
       utils.getFileMessages.setInfiniteData(
         { fileId, limit: INFINITE_QUERY_LIMIT },
-        (old: InfiniteData<MessagePage> | undefined): InfiniteData<MessagePage> | undefined => {
+        (
+          old: InfiniteData<MessagePage> | undefined,
+        ): InfiniteData<MessagePage> | undefined => {
           if (!old) return old;
 
           const updatedPages = old.pages.map((page) => ({
             ...page,
             messages: page.messages.map((msg) =>
               msg.id === messageId
-                ? { ...msg, status: 'seen' as MessageStatus } // Explicit type assertion
-                : msg
+                ? { ...msg, status: "seen" as MessageStatus } // Explicit type assertion
+                : msg,
             ),
           }));
 
           return { ...old, pages: updatedPages };
-        }
+        },
       );
     },
-    [fileId, utils]
+    [fileId, utils],
   );
 
   const addMessage = () => {

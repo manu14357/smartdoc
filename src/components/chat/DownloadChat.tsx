@@ -1,18 +1,44 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
-import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import ExportButton from './ExportButton';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { Download, Eye, FileText, List, MessageCircle, BarChart, Tag, Copy, FileSpreadsheet } from 'lucide-react';
-import { trpc } from '@/app/_trpc/client';
-import { INFINITE_QUERY_LIMIT } from '@/config/infinite-query';
-import { useToast } from '@/components/ui/use-toast';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import * as XLSX from "xlsx";
+import React, { useState, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ExportButton from "./ExportButton";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import {
+  Download,
+  Eye,
+  FileText,
+  List,
+  MessageCircle,
+  BarChart,
+  Tag,
+  Copy,
+  FileSpreadsheet,
+} from "lucide-react";
+import { trpc } from "@/app/_trpc/client";
+import { INFINITE_QUERY_LIMIT } from "@/config/infinite-query";
+import { useToast } from "@/components/ui/use-toast";
 
 // Define the structure of a chat message
 interface Message {
@@ -32,13 +58,15 @@ interface DownloadChatProps {
 
 const DownloadChat: React.FC<DownloadChatProps> = ({
   fileId,
-  fileName = 'Untitled',
-  additionalMetadata = {}
+  fileName = "Untitled",
+  additionalMetadata = {},
 }) => {
   const { toast } = useToast(); // Hook for displaying notifications
   const [isPreviewOpen, setIsPreviewOpen] = useState(false); // State to control the preview dialog
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string>(''); // URL for the PDF preview
-  const [previewMode, setPreviewMode] = useState<'pdf' | 'list' | 'stats'>('pdf'); // Current preview mode
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string>(""); // URL for the PDF preview
+  const [previewMode, setPreviewMode] = useState<"pdf" | "list" | "stats">(
+    "pdf",
+  ); // Current preview mode
 
   // Fetch chat messages using TRPC with infinite scrolling capabilities
   const { data: messagePages } = trpc.getFileMessages.useInfiniteQuery(
@@ -46,7 +74,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     {
       getNextPageParam: (lastPage) => lastPage?.nextCursor,
       keepPreviousData: true,
-    }
+    },
   );
 
   // Flatten the paginated messages into a single array
@@ -56,9 +84,9 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
         page.messages.map((msg) => ({
           ...msg,
           createdAt: new Date(msg.createdAt),
-        }))
+        })),
       ) ?? [],
-    [messagePages]
+    [messagePages],
   );
 
   /**
@@ -70,9 +98,9 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     return messages
       .map(
         (message) =>
-          `[${message.isUserMessage ? 'You' : 'Assistant'} - ${new Date(message.createdAt).toLocaleString()}]\n${message.text}`
+          `[${message.isUserMessage ? "You" : "Assistant"} - ${new Date(message.createdAt).toLocaleString()}]\n${message.text}`,
       )
-      .join('\n\n');
+      .join("\n\n");
   };
 
   /**
@@ -82,14 +110,14 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
    */
   const generateExcelExport = (messages: Message[]) => {
     const worksheetData = messages.map((message) => ({
-      Sender: message.isUserMessage ? 'You' : 'Assistant',
+      Sender: message.isUserMessage ? "You" : "Assistant",
       Message: message.text,
       Timestamp: new Date(message.createdAt).toLocaleString(),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Chat History');
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Chat History");
 
     return workbook;
   };
@@ -100,16 +128,19 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
    * @param fullMessageListMode - Determines whether to include full messages or truncate them.
    * @returns A jsPDF instance representing the generated PDF.
    */
-  const createComprehensivePdfDocument = (messages: Message[], fullMessageListMode = false): jsPDF => {
+  const createComprehensivePdfDocument = (
+    messages: Message[],
+    fullMessageListMode = false,
+  ): jsPDF => {
     const pdf = new jsPDF();
     const margin = 20;
 
     // Document Metadata and Overview
     pdf.setProperties({
       title: `Comprehensive Chat History - ${fileName}`,
-      subject: 'Detailed Conversation Export',
-      author: 'Chat Application',
-      creator: 'Chat Application',
+      subject: "Detailed Conversation Export",
+      author: "Chat Application",
+      creator: "Chat Application",
     });
 
     // Define a color palette for consistent styling
@@ -123,7 +154,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     // Title Page
     pdf.setFontSize(24);
     pdf.setTextColor(...colors.primary);
-    pdf.text('Comprehensive Chat Export', margin, 40);
+    pdf.text("Comprehensive Chat Export", margin, 40);
 
     pdf.setFontSize(14);
     pdf.setTextColor(100, 100, 100);
@@ -133,16 +164,16 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     // Metadata Section
     pdf.setFontSize(12);
     pdf.setTextColor(...colors.secondary);
-    pdf.text('Conversation Metadata', margin, 80);
+    pdf.text("Conversation Metadata", margin, 80);
 
     pdf.setFontSize(10);
     pdf.setTextColor(0, 0, 0);
     let metadataY = 90;
     Object.entries({
       ...additionalMetadata,
-      'Total Messages': messages.length,
-      'User Messages': messages.filter((m) => m.isUserMessage).length,
-      'Assistant Messages': messages.filter((m) => !m.isUserMessage).length,
+      "Total Messages": messages.length,
+      "User Messages": messages.filter((m) => m.isUserMessage).length,
+      "Assistant Messages": messages.filter((m) => !m.isUserMessage).length,
     }).forEach(([key, value]) => {
       pdf.text(`${key}: ${value}`, margin, metadataY);
       metadataY += 7;
@@ -152,19 +183,31 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     pdf.addPage();
     pdf.setFontSize(16);
     pdf.setTextColor(...colors.primary);
-    pdf.text('Message Statistics', margin, 30);
+    pdf.text("Message Statistics", margin, 30);
 
     pdf.autoTable({
       startY: 40,
-      head: [['Statistic', 'Value']],
+      head: [["Statistic", "Value"]],
       body: [
-        ['Total Messages', messages.length.toString()],
-        ['User Messages', messages.filter((m) => m.isUserMessage).length.toString()],
-        ['Assistant Messages', messages.filter((m) => !m.isUserMessage).length.toString()],
-        ['First Message Date', messages[0]?.createdAt.toLocaleString() || 'N/A'],
-        ['Last Message Date', messages[messages.length - 1]?.createdAt.toLocaleString() || 'N/A'],
+        ["Total Messages", messages.length.toString()],
+        [
+          "User Messages",
+          messages.filter((m) => m.isUserMessage).length.toString(),
+        ],
+        [
+          "Assistant Messages",
+          messages.filter((m) => !m.isUserMessage).length.toString(),
+        ],
+        [
+          "First Message Date",
+          messages[0]?.createdAt.toLocaleString() || "N/A",
+        ],
+        [
+          "Last Message Date",
+          messages[messages.length - 1]?.createdAt.toLocaleString() || "N/A",
+        ],
       ],
-      theme: 'striped',
+      theme: "striped",
       headStyles: {
         fillColor: colors.secondary,
         textColor: [255, 255, 255],
@@ -175,7 +218,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     pdf.addPage();
     pdf.setFontSize(16);
     pdf.setTextColor(...colors.primary);
-    pdf.text('Full Conversation', margin, 30);
+    pdf.text("Full Conversation", margin, 30);
 
     /**
      * Processes and formats text by removing markdown syntax.
@@ -185,8 +228,8 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
     const processFormattedText = (text: string) => {
       // Remove bold and italic markdown
       const processedText = text
-        .replace(/\*\*(.*?)\*\*/g, '$1') // Removes **bold**
-        .replace(/\*(.*?)\*/g, '$1'); // Removes *italic*
+        .replace(/\*\*(.*?)\*\*/g, "$1") // Removes **bold**
+        .replace(/\*(.*?)\*/g, "$1"); // Removes *italic*
       return processedText;
     };
 
@@ -195,13 +238,13 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
       // Full message list with complete text
       pdf.autoTable({
         startY: 40,
-        head: [['Sender', 'Message', 'Timestamp']],
+        head: [["Sender", "Message", "Timestamp"]],
         body: messages.map((message) => [
-          message.isUserMessage ? 'You' : 'Assistant',
+          message.isUserMessage ? "You" : "Assistant",
           processFormattedText(message.text),
           new Date(message.createdAt).toLocaleString(),
         ]),
-        theme: 'striped',
+        theme: "striped",
         headStyles: {
           fillColor: colors.secondary,
           textColor: [255, 255, 255],
@@ -215,22 +258,22 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
         styles: {
           cellPadding: 3,
           fontSize: 8,
-          overflow: 'linebreak',
+          overflow: "linebreak",
         },
       });
     } else {
       // Truncated message list
       pdf.autoTable({
         startY: 40,
-        head: [['Sender', 'Message', 'Timestamp']],
+        head: [["Sender", "Message", "Timestamp"]],
         body: messages.map((message) => [
-          message.isUserMessage ? 'You' : 'Assistant',
+          message.isUserMessage ? "You" : "Assistant",
           message.text.length > 100
-            ? processFormattedText(message.text.substring(0, 100)) + '...'
+            ? processFormattedText(message.text.substring(0, 100)) + "..."
             : processFormattedText(message.text),
           new Date(message.createdAt).toLocaleString(),
         ]),
-        theme: 'striped',
+        theme: "striped",
         headStyles: {
           fillColor: colors.secondary,
           textColor: [255, 255, 255],
@@ -258,30 +301,33 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
         ...message,
         createdAt: new Date(message.createdAt),
       }));
-  
-      const pdf = createComprehensivePdfDocument(convertedMessages, fullMessageList);
-  
+
+      const pdf = createComprehensivePdfDocument(
+        convertedMessages,
+        fullMessageList,
+      );
+
       if (preview) {
-        const pdfBlob = pdf.output('blob');
+        const pdfBlob = pdf.output("blob");
         const url = URL.createObjectURL(pdfBlob);
         setPdfPreviewUrl(url);
         setIsPreviewOpen(true);
       } else {
         pdf.save(
-          `comprehensive-chat-history-${fileName}${fullMessageList ? '-full-messages' : ''}.pdf`
+          `comprehensive-chat-history-${fileName}${fullMessageList ? "-full-messages" : ""}.pdf`,
         );
         toast({
-          title: 'Success',
-          description: `${fullMessageList ? 'Full Messages' : 'Comprehensive'} chat history downloaded`,
-          variant: 'default',
+          title: "Success",
+          description: `${fullMessageList ? "Full Messages" : "Comprehensive"} chat history downloaded`,
+          variant: "default",
         });
       }
     } catch (error) {
       console.error(error);
       toast({
-        title: 'Export Failed',
-        description: 'Unable to generate comprehensive chat document',
-        variant: 'destructive',
+        title: "Export Failed",
+        description: "Unable to generate comprehensive chat document",
+        variant: "destructive",
       });
     }
   };
@@ -292,24 +338,24 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
   const downloadPlainText = () => {
     try {
       const textContent = generatePlainTextExport(messages);
-      const blob = new Blob([textContent], { type: 'text/plain' });
+      const blob = new Blob([textContent], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = `chat-history-${fileName}.txt`;
       link.click();
-  
+
       toast({
-        title: 'Success',
-        description: 'Chat history downloaded as plain text',
-        variant: 'default',
+        title: "Success",
+        description: "Chat history downloaded as plain text",
+        variant: "default",
       });
     } catch (error) {
       console.error(error);
       toast({
-        title: 'Export Failed',
-        description: 'Unable to generate plain text export',
-        variant: 'destructive',
+        title: "Export Failed",
+        description: "Unable to generate plain text export",
+        variant: "destructive",
       });
     }
   };
@@ -323,16 +369,16 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
       XLSX.writeFile(workbook, `chat-history-${fileName}.xlsx`);
 
       toast({
-        title: 'Success',
-        description: 'Chat history downloaded as Excel spreadsheet',
-        variant: 'default',
+        title: "Success",
+        description: "Chat history downloaded as Excel spreadsheet",
+        variant: "default",
       });
     } catch (error) {
       console.error(error);
       toast({
-        title: 'Export Failed',
-        description: 'Unable to generate Excel export',
-        variant: 'destructive',
+        title: "Export Failed",
+        description: "Unable to generate Excel export",
+        variant: "destructive",
       });
     }
   };
@@ -346,16 +392,16 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
       navigator.clipboard.writeText(textContent);
 
       toast({
-        title: 'Copied',
-        description: 'Chat history copied to clipboard',
-        variant: 'default',
+        title: "Copied",
+        description: "Chat history copied to clipboard",
+        variant: "default",
       });
     } catch (error) {
       console.error(error);
       toast({
-        title: 'Copy Failed',
-        description: 'Unable to copy chat history',
-        variant: 'destructive',
+        title: "Copy Failed",
+        description: "Unable to copy chat history",
+        variant: "destructive",
       });
     }
   };
@@ -369,21 +415,37 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
         {/* Export Dropdown Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
               <Download className="size-4" /> Export
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem className="flex items-center gap-2" onSelect={() => generatePDF(false)}>
+            <DropdownMenuItem
+              className="flex items-center gap-2"
+              onSelect={() => generatePDF(false)}
+            >
               <FileText className="size-4" /> PDF Export
             </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2" onSelect={() => downloadPlainText()}>
+            <DropdownMenuItem
+              className="flex items-center gap-2"
+              onSelect={() => downloadPlainText()}
+            >
               <FileText className="size-4" /> Text Export
             </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2" onSelect={() => downloadExcel()}>
+            <DropdownMenuItem
+              className="flex items-center gap-2"
+              onSelect={() => downloadExcel()}
+            >
               <FileSpreadsheet className="size-4" /> Excel Export
             </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2" onSelect={copyToClipboard}>
+            <DropdownMenuItem
+              className="flex items-center gap-2"
+              onSelect={copyToClipboard}
+            >
               <Copy className="size-4" /> Copy to Clipboard
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -397,7 +459,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
           onClick={() => {
             generatePDF(true);
             setIsPreviewOpen(true);
-            setPreviewMode('pdf');
+            setPreviewMode("pdf");
           }}
         >
           <Eye className="size-4" /> Preview
@@ -405,7 +467,6 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
       </div>
     );
   };
-
 
   /**
    * Renders the preview tabs allowing users to switch between different views.
@@ -416,14 +477,14 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
       <div className="flex flex-wrap md:flex-nowrap gap-2 mb-4">
         {/* PDF View Tab - Hidden on Mobile */}
         <button
-          onClick={() => setPreviewMode('pdf')}
+          onClick={() => setPreviewMode("pdf")}
           className={`
             flex-1 p-2 flex items-center justify-center gap-2 rounded-lg 
             text-sm md:text-base
             ${
-              previewMode === 'pdf'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              previewMode === "pdf"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }
             hidden md:flex // This line hides the PDF View tab on mobile devices
           `}
@@ -433,14 +494,14 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
 
         {/* Messages List Tab */}
         <button
-          onClick={() => setPreviewMode('list')}
+          onClick={() => setPreviewMode("list")}
           className={`
             flex-1 p-2 flex items-center justify-center gap-2 rounded-lg 
             text-sm md:text-base
             ${
-              previewMode === 'list'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              previewMode === "list"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }
           `}
         >
@@ -449,14 +510,14 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
 
         {/* Analytics Tab */}
         <button
-          onClick={() => setPreviewMode('stats')}
+          onClick={() => setPreviewMode("stats")}
           className={`
             flex-1 p-2 flex items-center justify-center gap-2 rounded-lg 
             text-sm md:text-base
             ${
-              previewMode === 'stats'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              previewMode === "stats"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }
           `}
         >
@@ -479,15 +540,15 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
               mb-2 md:mb-4 p-2 md:p-3 rounded-lg 
               ${
                 message.isUserMessage
-                  ? 'bg-blue-50 text-blue-900'
-                  : 'bg-green-50 text-green-900'
+                  ? "bg-blue-50 text-blue-900"
+                  : "bg-green-50 text-green-900"
               }
             `}
           >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2">
               <div className="flex items-center gap-2 mb-1 md:mb-0">
                 <span className="font-semibold text-sm md:text-base">
-                  {message.isUserMessage ? 'You' : 'Assistant'}
+                  {message.isUserMessage ? "You" : "Assistant"}
                 </span>
                 {message.isUserMessage ? (
                   <Tag className="size-3 md:size-4 text-blue-500" />
@@ -505,7 +566,9 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
               remarkPlugins={[remarkGfm]}
               components={{
                 // Customize rendering of specific Markdown elements if needed
-                a: ({ node, ...props }) => <a className="text-blue-600 underline" {...props} />,
+                a: ({ node, ...props }) => (
+                  <a className="text-blue-600 underline" {...props} />
+                ),
                 code: ({ node, inline, className, children, ...props }) => {
                   return !inline ? (
                     <pre className="bg-gray-100 p-2 rounded-md overflow-auto">
@@ -582,11 +645,14 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
             <div className="flex justify-between text-sm">
               <div>
                 <p className="font-medium">First Message</p>
-                <p>{messages[0]?.createdAt.toLocaleString() || 'N/A'}</p>
+                <p>{messages[0]?.createdAt.toLocaleString() || "N/A"}</p>
               </div>
               <div>
                 <p className="font-medium">Last Message</p>
-                <p>{messages[messages.length - 1]?.createdAt.toLocaleString() || 'N/A'}</p>
+                <p>
+                  {messages[messages.length - 1]?.createdAt.toLocaleString() ||
+                    "N/A"}
+                </p>
               </div>
             </div>
           </div>
@@ -631,7 +697,7 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
               <Button
                 onClick={() => {
                   generatePDF(true);
-                  setPreviewMode('pdf');
+                  setPreviewMode("pdf");
                 }}
                 variant="outline"
                 size="sm"
@@ -659,7 +725,9 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
         */}
         <DialogContent className="max-w-full md:max-w-4xl h-[90vh] md:h-[92vh] p-2 md:p-6">
           <DialogHeader className="p-2 md:p-0">
-            <DialogTitle className="text-base md:text-xl">Chat History Export</DialogTitle>
+            <DialogTitle className="text-base md:text-xl">
+              Chat History Export
+            </DialogTitle>
             <DialogDescription className="text-xs md:text-sm">
               Comprehensive conversation export with multiple views
             </DialogDescription>
@@ -671,22 +739,22 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
           {/* Preview Content */}
           <div className="h-[70vh] md:h-[65vh] overflow-auto">
             {/* PDF Preview - Visible only on medium and larger screens */}
-            {previewMode === 'pdf' && pdfPreviewUrl && (
+            {previewMode === "pdf" && pdfPreviewUrl && (
               <div className="w-full h-full overflow-hidden">
                 <iframe
                   src={pdfPreviewUrl}
                   className="w-full h-full rounded-md border"
                   title="PDF Preview"
-                  style={{ minHeight: '400px' }} // Ensures minimum height on mobile devices
+                  style={{ minHeight: "400px" }} // Ensures minimum height on mobile devices
                 />
               </div>
             )}
 
             {/* Messages List Preview */}
-            {previewMode === 'list' && renderMessageList()}
+            {previewMode === "list" && renderMessageList()}
 
             {/* Analytics Preview */}
-            {previewMode === 'stats' && renderStatistics()}
+            {previewMode === "stats" && renderStatistics()}
           </div>
 
           {/* Action Buttons */}
@@ -697,13 +765,13 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
               className="w-full md:w-auto"
               onClick={() => {
                 switch (previewMode) {
-                  case 'pdf':
+                  case "pdf":
                     generatePDF(false);
                     break;
-                  case 'list':
+                  case "list":
                     downloadPlainText();
                     break;
-                  case 'stats':
+                  case "stats":
                     downloadExcel();
                     break;
                 }
@@ -727,4 +795,4 @@ const DownloadChat: React.FC<DownloadChatProps> = ({
   );
 };
 
-export default DownloadChat
+export default DownloadChat;

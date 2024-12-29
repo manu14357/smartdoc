@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -70,10 +69,11 @@
 }
 
 .grainy {
-  background-image: url('https://img.freepik.com/free-photo/design-space-paper-textured-background_53876-41739.jpg?t=st=1734173403~exp=1734177003~hmac=4885575e3f335493904df6350f2caec4c677fe6b7f00746851d8d8d9f6889225&w=1380');
+  background-image: url("https://img.freepik.com/free-photo/design-space-paper-textured-background_53876-41739.jpg?t=st=1734173403~exp=1734177003~hmac=4885575e3f335493904df6350f2caec4c677fe6b7f00746851d8d8d9f6889225&w=1380");
   background-size: cover; /* To make the image cover the entire background */
   background-position: center; /* To center the image */
-  background-repeat: no-repeat; /* Prevents the image from repeating */}
+  background-repeat: no-repeat; /* Prevents the image from repeating */
+}
 
 .scrollbar-w-2::-webkit-scrollbar {
   width: 0.25rem;
@@ -93,12 +93,6 @@
 .scrollbar-thumb-rounded::-webkit-scrollbar-thumb {
   border-radius: 7px;
 }
-
-
-
-
-
-
 
 /* Example CSS */
 .menu {

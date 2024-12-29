@@ -1,3 +1,1 @@
-import { FaissStore } from 'langchain/vectorstores/faiss'
-
-
+import { FaissStore } from "langchain/vectorstores/faiss";

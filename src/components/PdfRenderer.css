@@ -1,26 +1,25 @@
 /* PdfRenderer.css */
 
 @media (max-width: 768px) {
-    .icon-btn {
-      width: 30px;
-      height: 30px;
-    }
-  
-    .input-box {
-      width: 50px;
-      height: 30px;
-    }
-  
-    .page-info {
-      font-size: 12px;
-    }
-  
-    .page-button {
-      padding: 5px;
-    }
-  
-    .dropdown-btn {
-      font-size: 12px;
-    }
+  .icon-btn {
+    width: 30px;
+    height: 30px;
   }
-  
+
+  .input-box {
+    width: 50px;
+    height: 30px;
+  }
+
+  .page-info {
+    font-size: 12px;
+  }
+
+  .page-button {
+    padding: 5px;
+  }
+
+  .dropdown-btn {
+    font-size: 12px;
+  }
+}
