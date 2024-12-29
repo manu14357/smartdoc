@@ -108,3 +108,75 @@
   height: 100%;
   z-index: 900; /* Below the menu */
 }
+
+
+
+/* Keyframe animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes expand {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Animation classes */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.4s ease-out;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.animate-expand {
+  animation: expand 0.5s ease-out;
+}
+
+/* Remove focus border */
+button:focus {
+  outline: none;
+}
+
+button:focus:not(:focus-visible) {
+  box-shadow: none;
+}
+
+/* Transition for icon rotation */
+button svg {
+  transition: transform 0.3s ease-in-out;
+}

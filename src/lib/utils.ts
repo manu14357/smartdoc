@@ -38,7 +38,7 @@ export function constructMetadata({
       ],
     },
     icons,
-    metadataBase: new URL("http://localhost:3000/"),
+    metadataBase: new URL("https://smartdoc-silk.vercel.app/"),
     themeColor: "#1D4ED8",
     ...(noIndex && {
       robots: {
