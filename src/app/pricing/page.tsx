@@ -1,46 +1,62 @@
-'use client'
+// src/app/pricing/page.tsx
+"use client"; // Ensure this is a client-side component
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import MaxWidthWrapper from '@/components/MaxWidthWrapper';
-import UpgradeButton from '@/components/UpgradeButton';
-import { buttonVariants } from '@/components/ui/button';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import MaxWidthWrapper from "@/components/MaxWidthWrapper";
+import UpgradeButton from "@/components/UpgradeButton";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { PLANS } from '@/config/stripe';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/tooltip";
+import { PLANS } from "@/config/stripe";
+import { cn } from "@/lib/utils";
 import {
   ArrowRight,
-  Check,
-  HelpCircle,
-  Minus,
-  Zap,
-  Clock,
   FileText,
   MessageSquare,
+  Zap,
+  Clock,
   Shield,
   Sparkles,
-} from 'lucide-react';
-import Link from 'next/link';
+  HelpCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { useUser } from "./UserContext"; // Updated import
 
-const Page = ({ user }: { user: any }) => {
-  const [billingPeriod, setBillingPeriod] = useState('monthly');
+/**
+ * Pricing Page Component.
+ * Displays different pricing plans based on the user's selection.
+ */
+const Page = () => {
+  // Access user data from context using the custom hook
+  const { user } = useUser();
+
+  // State to manage billing period ('monthly' or 'annual')
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">(
+    "monthly",
+  );
+
+  // State to track which plan is currently hovered
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
 
+  /**
+   * Array of pricing items to be displayed.
+   * Each plan includes its details and features.
+   */
   const pricingItems = [
     {
-      plan: 'Free',
-      tagline: 'Perfect for side projects and small teams',
+      plan: "Free",
+      tagline: "Perfect for side projects and small teams",
       quota: 10,
       popular: false,
       features: [
         {
-          text: '5 pages per PDF',
-          footnote: 'The maximum amount of pages per PDF-file.',
+          text: "5 pages per PDF",
+          footnote: "The maximum amount of pages per PDF-file.",
           icon: <FileText className="h-4 w-4 text-blue-500" />,
         },
         {
@@ -61,17 +77,18 @@ const Page = ({ user }: { user: any }) => {
           text: 'Community support',
           icon: <MessageSquare className="h-4 w-4 text-blue-500" />,
         },
+        // ... other features
       ],
     },
     {
-      plan: 'Pro',
-      tagline: 'Advanced features for power users',
-      quota: PLANS.find((p) => p.slug === 'pro')!.quota,
+      plan: "Pro",
+      tagline: "Advanced features for power users",
+      quota: PLANS.find((p) => p.slug === "pro")!.quota,
       popular: true,
       features: [
         {
-          text: '25 pages per PDF',
-          footnote: 'The maximum amount of pages per PDF-file.',
+          text: "25 pages per PDF",
+          footnote: "The maximum amount of pages per PDF-file.",
           icon: <FileText className="h-4 w-4 text-indigo-500" />,
         },
         {
@@ -92,12 +109,14 @@ const Page = ({ user }: { user: any }) => {
           text: 'Advanced security',
           icon: <Shield className="h-4 w-4 text-indigo-500" />,
         },
+        // ... other features
       ],
     },
   ];
 
   return (
     <MaxWidthWrapper className="mb-8 mt-24 text-center max-w-6xl">
+      {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -105,15 +124,18 @@ const Page = ({ user }: { user: any }) => {
         className="mx-auto mb-10 sm:max-w-lg"
       >
         <h1 className="text-6xl font-bold sm:text-7xl">
+          {/* Gradient Text Effect */}
           <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Simple Pricing
           </span>
         </h1>
         <p className="mt-5 text-xl text-gray-600">
-          Choose the perfect plan for your needs. All plans include our core features.
+          Choose the perfect plan for your needs. All plans include our core
+          features.
         </p>
       </motion.div>
 
+      {/* Billing Period Toggle */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -121,20 +143,22 @@ const Page = ({ user }: { user: any }) => {
         className="flex justify-center mb-8"
       >
         <div className="bg-gray-100/50 p-1 rounded-xl backdrop-blur-sm">
+          {/* Monthly Billing Button */}
           <button
-            onClick={() => setBillingPeriod('monthly')}
-            className={cn('px-6 py-3 rounded-lg transition-all font-medium', {
-              'bg-white shadow-lg text-blue-600': billingPeriod === 'monthly',
-              'text-gray-600': billingPeriod !== 'monthly',
+            onClick={() => setBillingPeriod("monthly")}
+            className={cn("px-6 py-3 rounded-lg transition-all font-medium", {
+              "bg-white shadow-lg text-blue-600": billingPeriod === "monthly",
+              "text-gray-600": billingPeriod !== "monthly",
             })}
           >
             Monthly
           </button>
+          {/* Annual Billing Button with Discount Badge */}
           <button
-            onClick={() => setBillingPeriod('annual')}
-            className={cn('px-6 py-3 rounded-lg transition-all font-medium', {
-              'bg-white shadow-lg text-blue-600': billingPeriod === 'annual',
-              'text-gray-600': billingPeriod !== 'annual',
+            onClick={() => setBillingPeriod("annual")}
+            className={cn("px-6 py-3 rounded-lg transition-all font-medium", {
+              "bg-white shadow-lg text-blue-600": billingPeriod === "annual",
+              "text-gray-600": billingPeriod !== "annual",
             })}
           >
             Annual
@@ -145,12 +169,17 @@ const Page = ({ user }: { user: any }) => {
         </div>
       </motion.div>
 
+      {/* Pricing Plans */}
       <div className="pt-12 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <TooltipProvider>
           {pricingItems.map(({ plan, tagline, quota, features, popular }) => {
+            // Retrieve the price based on the plan slug
             const price =
-              PLANS.find((p) => p.slug === plan.toLowerCase())?.price.amount || 0;
-            const annualPrice = billingPeriod === 'annual' ? price * 0.8 : price;
+              PLANS.find((p) => p.slug === plan.toLowerCase())?.price.amount ||
+              0;
+            // Calculate annual price with a 20% discount
+            const annualPrice =
+              billingPeriod === "annual" ? price * 0.8 : price;
 
             return (
               <motion.div
@@ -161,14 +190,16 @@ const Page = ({ user }: { user: any }) => {
                 onMouseEnter={() => setHoveredPlan(plan)}
                 onMouseLeave={() => setHoveredPlan(null)}
                 className={cn(
-                  'relative rounded-2xl bg-white shadow-xl transform transition-all duration-300',
+                  "relative rounded-2xl bg-white shadow-xl transform transition-all duration-300",
                   {
-                    'border-2 border-blue-600 scale-105': hoveredPlan === plan || popular,
-                    'hover:scale-105': hoveredPlan !== plan,
-                    'border border-gray-200': !popular,
-                  }
+                    "border-2 border-blue-600 scale-105":
+                      hoveredPlan === plan || popular,
+                    "hover:scale-105": hoveredPlan !== plan,
+                    "border border-gray-200": !popular,
+                  },
                 )}
               >
+                {/* Popular Badge */}
                 {popular && (
                   <div className="absolute -top-5 left-0 right-0 mx-auto w-32 rounded-full bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 px-3 py-2 text-sm font-medium text-white shadow-lg">
                     <Sparkles className="h-4 w-4 inline mr-1" />
@@ -176,6 +207,7 @@ const Page = ({ user }: { user: any }) => {
                   </div>
                 )}
 
+                {/* Plan Details */}
                 <div className="p-8">
                   <h3 className="text-center font-display text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                     {plan}
@@ -183,13 +215,14 @@ const Page = ({ user }: { user: any }) => {
                   <p className="mt-2 text-gray-500">{tagline}</p>
                   <div className="my-8 text-center">
                     <p className="font-display text-7xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                      ${billingPeriod === 'annual' ? annualPrice : price}
+                      ${billingPeriod === "annual" ? annualPrice : price}
                     </p>
                     <p className="text-gray-500 mt-2">
-                      per {billingPeriod === 'annual' ? 'month' : 'month'}
+                      per {billingPeriod === "annual" ? "month" : "month"}
                     </p>
                   </div>
 
+                  {/* Features List */}
                   <ul className="space-y-5">
                     {features.map(({ text, footnote, icon }) => (
                       <motion.li
@@ -204,6 +237,7 @@ const Page = ({ user }: { user: any }) => {
                         {footnote ? (
                           <div className="flex items-center space-x-1">
                             <p className="text-gray-600">{text}</p>
+                            {/* Tooltip for additional information */}
                             <Tooltip delayDuration={300}>
                               <TooltipTrigger className="cursor-default ml-1.5">
                                 <HelpCircle className="h-4 w-4 text-gray-400" />
@@ -220,16 +254,17 @@ const Page = ({ user }: { user: any }) => {
                     ))}
                   </ul>
 
+                  {/* Action Button */}
                   <div className="mt-8">
-                    {plan === 'Free' ? (
+                    {plan === "Free" ? (
                       <Link
-                        href={user ? '/dashboard' : '/sign-in'}
+                        href={user ? "/dashboard" : "/sign-in"}
                         className={buttonVariants({
-                          className: 'w-full py-6 text-lg font-medium',
-                          variant: 'secondary',
+                          className: "w-full py-6 text-lg font-medium",
+                          variant: "secondary",
                         })}
                       >
-                        {user ? 'Upgrade now' : 'Get started'}
+                        {user ? "Upgrade now" : "Get started"}
                         <ArrowRight className="h-5 w-5 ml-1.5" />
                       </Link>
                     ) : user ? (
@@ -238,10 +273,11 @@ const Page = ({ user }: { user: any }) => {
                       <Link
                         href="/sign-in"
                         className={buttonVariants({
-                          className: 'w-full py-6 text-lg font-medium bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700',
+                          className:
+                            "w-full py-6 text-lg font-medium bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700",
                         })}
                       >
-                        {user ? 'Upgrade now' : 'Get started'}
+                        {user ? "Upgrade now" : "Get started"}
                         <ArrowRight className="h-5 w-5 ml-1.5" />
                       </Link>
                     )}
@@ -253,6 +289,7 @@ const Page = ({ user }: { user: any }) => {
         </TooltipProvider>
       </div>
 
+      {/* Frequently Asked Questions Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -265,22 +302,30 @@ const Page = ({ user }: { user: any }) => {
           </span>
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+          {/* FAQ Item 1 */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             className="bg-white p-8 rounded-xl shadow-lg"
           >
-            <h3 className="font-bold text-xl mb-3">Can I change plans later?</h3>
+            <h3 className="font-bold text-xl mb-3">
+              Can I change plans later?
+            </h3>
             <p className="text-gray-600 text-lg">
-              Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately.
+              Yes, you can upgrade or downgrade your plan at any time. Changes
+              take effect immediately.
             </p>
           </motion.div>
+          {/* FAQ Item 2 */}
           <motion.div
             whileHover={{ scale: 1.02 }}
             className="bg-white p-8 rounded-xl shadow-lg"
           >
-            <h3 className="font-bold text-xl mb-3">What payment methods do you accept?</h3>
+            <h3 className="font-bold text-xl mb-3">
+              What payment methods do you accept?
+            </h3>
             <p className="text-gray-600 text-lg">
-              We accept all major credit cards, PayPal, and bank transfers for business plans.
+              We accept all major credit cards, PayPal, and bank transfers for
+              business plans.
             </p>
           </motion.div>
         </div>
