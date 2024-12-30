@@ -3,25 +3,17 @@ import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { SendMessageValidator } from "@/lib/validators/SendMessageValidator";
 import { NextRequest } from "next/server";
 import axios from "axios";
-import * as pdfjs from "pdfjs-dist";
 
+import { pdfjs } from "react-pdf";
 // Manually set the worker path for pdfjs
 import { join } from "path";
-
-if (typeof window !== 'undefined') {
-  // For client-side
-  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-} else {
-  // For server-side
-  pdfjs.GlobalWorkerOptions.workerSrc = join(
-    process.cwd(),
-    "node_modules",
-    "pdfjs-dist",
-    "build",
-    "pdf.worker.min.js",
-  );
-}
-
+pdfjs.GlobalWorkerOptions.workerSrc = join(
+  process.cwd(),
+  "node_modules",
+  "pdfjs-dist",
+  "build",
+  "pdf.worker.min.js",
+);
 
 // Define the Message interface
 interface Message {
