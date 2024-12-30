@@ -1,3 +1,4 @@
+// Import necessary modules and libraries
 import { db } from "@/db";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { SendMessageValidator } from "@/lib/validators/SendMessageValidator";
@@ -5,17 +6,11 @@ import { NextRequest } from "next/server";
 import axios from "axios";
 
 import { pdfjs } from "react-pdf";
-// Manually set the worker path for pdfjs
-import { join } from "path";
-pdfjs.GlobalWorkerOptions.workerSrc = join(
-  process.cwd(),
-  "node_modules",
-  "pdfjs-dist",
-  "build",
-  "pdf.worker.min.js",
-);
 
-// Define the Message interface
+// Set the PDF.js worker to use a CDN URL to avoid path issues in server environments
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+// Define the Message interface for type safety
 interface Message {
   id: string;
   text: string;
@@ -26,69 +21,77 @@ interface Message {
   updatedAt: Date;
 }
 
+// Export the POST handler for the API route
 export const POST = async (req: NextRequest) => {
-  const body = await req.json();
-
-  const { getUser } = getKindeServerSession();
-  const user = getUser();
-
-  const { id: userId } = user;
-
-  if (!userId) return new Response("Unauthorized", { status: 401 });
-
-  const { fileId, message } = SendMessageValidator.parse(body);
-
-  const file = await db.file.findFirst({
-    where: {
-      id: fileId,
-      userId,
-    },
-  });
-
-  if (!file) return new Response("Not found", { status: 404 });
-
-  // Store the user's message in the database
-  await db.message.create({
-    data: {
-      text: message,
-      isUserMessage: true,
-      fileId,
-      userId,
-    },
-  });
-
-  const pdfUrl = file.url;
-
   try {
-    // Step 1: Download the PDF content from the URL
+    // Parse the incoming JSON request body
+    const body = await req.json();
+
+    // Retrieve the current user session
+    const { getUser } = getKindeServerSession();
+    const user = getUser();
+
+    // Extract the user ID from the session
+    const { id: userId } = user;
+
+    // If no user is found, return an unauthorized response
+    if (!userId) return new Response("Unauthorized", { status: 401 });
+
+    // Validate and extract fileId and message from the request body
+    const { fileId, message } = SendMessageValidator.parse(body);
+
+    // Fetch the file associated with the fileId and userId from the database
+    const file = await db.file.findFirst({
+      where: {
+        id: fileId,
+        userId,
+      },
+    });
+
+    // If the file does not exist, return a not found response
+    if (!file) return new Response("Not found", { status: 404 });
+
+    // Store the user's message in the database
+    await db.message.create({
+      data: {
+        text: message,
+        isUserMessage: true,
+        fileId,
+        userId,
+      },
+    });
+
+    const pdfUrl = file.url;
+
+    // Download and process the PDF content
     const pdfResponse = await axios.get(pdfUrl, {
       responseType: "arraybuffer",
     });
 
-    // Convert the Buffer to Uint8Array
+    // Convert the downloaded PDF data to Uint8Array
     const pdfData = new Uint8Array(pdfResponse.data);
 
-    // Step 2: Load the PDF document using pdfjs-dist
-    const pdfDoc = await pdfjs.getDocument(pdfData).promise;
+    // Load the PDF document using PDF.js
+    const pdfDoc = await pdfjs.getDocument({ data: pdfData }).promise;
 
     let pdfText = "";
     const numPages = pdfDoc.numPages;
 
-    // Step 3: Extract text from each page
+    // Extract text from each page of the PDF
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdfDoc.getPage(pageNum);
       const textContent = await page.getTextContent();
-      pdfText +=
-        textContent.items
-          .map((item) => ("str" in item ? item.str : ""))
-          .join(" ") + "\n";
+      const pageText = textContent.items
+        .map((item: any) => ("str" in item ? item.str : ""))
+        .join(" ");
+      pdfText += `${pageText}\n`;
     }
 
-    // Prepare context from the extracted PDF content
-    const results = pdfText.substring(0, 2000); // Adjust the length if needed
+    // Prepare a context snippet from the extracted PDF text
+    const results = pdfText.substring(0, 2000); // Adjust the length as needed
 
-    // Step 4: Format the previous messages as context for the chat
-    const prevMessages: Message[] = (await db.message.findMany({
+    // Fetch the previous messages related to the file for context
+    const prevMessages: Message[] = await db.message.findMany({
       where: {
         fileId,
       },
@@ -105,8 +108,9 @@ export const POST = async (req: NextRequest) => {
         createdAt: "asc",
       },
       take: 6,
-    })) as Message[];
+    });
 
+    // Format the previous messages for the NVIDIA API
     const formattedPrevMessages = prevMessages.map((msg: Message) => ({
       role: msg.isUserMessage ? "user" : "assistant",
       content: msg.text,
@@ -116,7 +120,7 @@ export const POST = async (req: NextRequest) => {
       .map((msg) => msg.content)
       .join("\n\n");
 
-    // Step 5: Prepare the data for the NVIDIA API request
+    // Construct the messages payload for the NVIDIA API
     const messages = [
       {
         role: "system",
@@ -130,7 +134,7 @@ export const POST = async (req: NextRequest) => {
       { role: "user", content: message },
     ];
 
-    // Step 6: Call NVIDIA API with the context and the message
+    // Call the NVIDIA API with the prepared messages
     const response = await axios.post(
       "https://integrate.api.nvidia.com/v1/chat/completions",
       {
@@ -142,14 +146,15 @@ export const POST = async (req: NextRequest) => {
       },
       {
         headers: {
-          Authorization: `Bearer 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`, // Replace with your actual API key
+          Authorization: `Bearer YOUR_ACTUAL_API_KEY`, // Replace with your actual API key securely
         },
-      },
+      }
     );
 
+    // Extract the assistant's reply from the NVIDIA API response
     const completion = response.data.choices[0].message.content;
 
-    // Save the response from NVIDIA API to the database
+    // Save the assistant's response to the database
     await db.message.create({
       data: {
         text: completion,
@@ -159,6 +164,7 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
+    // Return the assistant's response to the client
     return new Response(completion);
   } catch (error) {
     console.error("Error processing PDF or calling NVIDIA API:", error);
