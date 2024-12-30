@@ -1,4 +1,5 @@
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
+import * as pdfjsLib from 'pdfjs-dist';
+
 
 // Ensure pdfjsLib is available
 if (!pdfjsLib.getDocument) {
