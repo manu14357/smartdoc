@@ -14,7 +14,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = join(
   "build",
   "pdf.worker.min.js",
 );
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+
 // Define the Message interface
 interface Message {
   id: string;
@@ -25,7 +25,7 @@ interface Message {
   createdAt: Date;
   updatedAt: Date;
 }
-
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 export const POST = async (req: NextRequest) => {
   const body = await req.json();
 
@@ -142,7 +142,7 @@ export const POST = async (req: NextRequest) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${NVIDIA_API_KEY}', // Replace with your actual API key
+          Authorization: `Bearer ${NVIDIA_API_KEY}`, // Replace with your actual API key
         },
       },
     );
