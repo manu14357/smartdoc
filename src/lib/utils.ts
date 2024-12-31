@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export function absoluteUrl(path: string) {
   if (typeof window !== "undefined") return path;
 
-  return `https://smartdoc-eight.vercel.app${path}`;
+  return `https://smartdoc-three.vercel.app${path}`;
 }
 
 export function constructMetadata({
@@ -38,7 +38,7 @@ export function constructMetadata({
       ],
     },
     icons,
-    metadataBase: new URL("https://smartdoc-eight.vercel.app"),
+    metadataBase: new URL("https://smartdoc-three.vercel.app"),
     themeColor: "#1D4ED8",
     ...(noIndex && {
       robots: {
