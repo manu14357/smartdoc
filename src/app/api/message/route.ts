@@ -211,8 +211,8 @@ export const POST = async (req: NextRequest) => {
           model: "nvidia/llama-3.1-nemotron-70b-instruct", // Specify the model to use
           messages, // Send the constructed messages payload
           temperature: 0.5, // Controls the randomness of the output
-          top_p: 1, // Top-p sampling parameter
-          max_tokens: 5024, // Maximum number of tokens in the response
+          top_p: 0.5, // Top-p sampling parameter
+          max_tokens: 1024, // Maximum number of tokens in the response
         },
         {
           Authorization: `Bearer ${NVIDIA_API_KEY}`, // Authorization header with API key
