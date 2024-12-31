@@ -1,16 +1,10 @@
-// Import necessary modules and libraries
 import { db } from "@/db";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
 import { SendMessageValidator } from "@/lib/validators/SendMessageValidator";
 import { NextRequest } from "next/server";
 import axios from "axios";
-
-import { pdfjs } from "react-pdf";
-
-// Set the PDF.js worker to use a CDN URL to avoid path issues in server environments
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
-// Define the Message interface for type safety
+import { PdfReader } from "pdfreader";
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 interface Message {
   id: string;
   text: string;
@@ -21,26 +15,35 @@ interface Message {
   updatedAt: Date;
 }
 
-// Export the POST handler for the API route
+// Helper function to parse PDF using pdfreader
+const parsePDF = (buffer: Buffer): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new PdfReader();
+    let textContent = "";
+
+    reader.parseBuffer(buffer, (err: Error, item: any) => {
+      if (err) {
+        reject(err);
+      } else if (!item) {
+        resolve(textContent);
+      } else if (item.text) {
+        textContent += item.text + " ";
+      }
+    });
+  });
+};
+
 export const POST = async (req: NextRequest) => {
   try {
-    // Parse the incoming JSON request body
     const body = await req.json();
-
-    // Retrieve the current user session
     const { getUser } = getKindeServerSession();
     const user = getUser();
-
-    // Extract the user ID from the session
     const { id: userId } = user;
 
-    // If no user is found, return an unauthorized response
     if (!userId) return new Response("Unauthorized", { status: 401 });
 
-    // Validate and extract fileId and message from the request body
     const { fileId, message } = SendMessageValidator.parse(body);
 
-    // Fetch the file associated with the fileId and userId from the database
     const file = await db.file.findFirst({
       where: {
         id: fileId,
@@ -48,10 +51,8 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-    // If the file does not exist, return a not found response
     if (!file) return new Response("Not found", { status: 404 });
 
-    // Store the user's message in the database
     await db.message.create({
       data: {
         text: message,
@@ -61,36 +62,23 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-    const pdfUrl = file.url;
-
-    // Download and process the PDF content
-    const pdfResponse = await axios.get(pdfUrl, {
-      responseType: "arraybuffer",
-    });
-
-    // Convert the downloaded PDF data to Uint8Array
-    const pdfData = new Uint8Array(pdfResponse.data);
-
-    // Load the PDF document using PDF.js
-    const pdfDoc = await pdfjs.getDocument({ data: pdfData }).promise;
-
+    // PDF processing with error handling
     let pdfText = "";
-    const numPages = pdfDoc.numPages;
-
-    // Extract text from each page of the PDF
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdfDoc.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => ("str" in item ? item.str : ""))
-        .join(" ");
-      pdfText += `${pageText}\n`;
+    try {
+      const pdfResponse = await axios.get(file.url, {
+        responseType: "arraybuffer",
+      });
+      
+      const buffer = Buffer.from(pdfResponse.data);
+      pdfText = await parsePDF(buffer);
+      
+    } catch (pdfError) {
+      console.error("Error processing PDF:", pdfError);
+      return new Response("Failed to process PDF", { status: 500 });
     }
 
-    // Prepare a context snippet from the extracted PDF text
-    const results = pdfText.substring(0, 2000); // Adjust the length as needed
+    const results = pdfText.substring(0, 2000);
 
-    // Fetch the previous messages related to the file for context
     const prevMessages: Message[] = await db.message.findMany({
       where: {
         fileId,
@@ -110,7 +98,6 @@ export const POST = async (req: NextRequest) => {
       take: 6,
     });
 
-    // Format the previous messages for the NVIDIA API
     const formattedPrevMessages = prevMessages.map((msg: Message) => ({
       role: msg.isUserMessage ? "user" : "assistant",
       content: msg.text,
@@ -120,7 +107,6 @@ export const POST = async (req: NextRequest) => {
       .map((msg) => msg.content)
       .join("\n\n");
 
-    // Construct the messages payload for the NVIDIA API
     const messages = [
       {
         role: "system",
@@ -134,40 +120,42 @@ export const POST = async (req: NextRequest) => {
       { role: "user", content: message },
     ];
 
-    // Call the NVIDIA API with the prepared messages
-    const response = await axios.post(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
-        model: "nvidia/llama-3.1-nemotron-70b-instruct",
-        messages,
-        temperature: 0.5,
-        top_p: 1,
-        max_tokens: 5024,
-      },
-      {
-        headers: {
-          Authorization: `Bearer YOUR_ACTUAL_API_KEY`, // Replace with your actual API key securely
+    try {
+      const response = await axios.post(
+        "https://integrate.api.nvidia.com/v1/chat/completions", // Verify this endpoint
+        {
+          model: "nvidia/llama-3.1-nemotron-70b-instruct",
+          messages,
+          temperature: 0.5,
+          top_p: 1,
+          max_tokens: 5024,
         },
-      }
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${NVIDIA_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+        }
+      );
 
-    // Extract the assistant's reply from the NVIDIA API response
-    const completion = response.data.choices[0].message.content;
+      const completion = response.data.choices[0].message.content;
 
-    // Save the assistant's response to the database
-    await db.message.create({
-      data: {
-        text: completion,
-        isUserMessage: false,
-        fileId,
-        userId,
-      },
-    });
+      await db.message.create({
+        data: {
+          text: completion,
+          isUserMessage: false,
+          fileId,
+          userId,
+        },
+      });
 
-    // Return the assistant's response to the client
-    return new Response(completion);
+      return new Response(completion);
+    } catch (apiError) {
+      console.error("Error calling NVIDIA API:", apiError);
+      return new Response("Failed to generate response", { status: 500 });
+    }
   } catch (error) {
-    console.error("Error processing PDF or calling NVIDIA API:", error);
+    console.error("General error:", error);
     return new Response("Failed to process the request", { status: 500 });
   }
 };
