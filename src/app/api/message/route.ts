@@ -4,7 +4,16 @@ import { SendMessageValidator } from "@/lib/validators/SendMessageValidator";
 import { NextRequest } from "next/server";
 import axios from "axios";
 import { PdfReader } from "pdfreader";
+
+// Access the NVIDIA API key from environment variables
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+
+// Configure Axios with an increased timeout
+const axiosInstance = axios.create({
+  timeout: 240000, // 30 seconds
+});
+
+// Interface representing a message in the database
 interface Message {
   id: string;
   text: string;
@@ -21,7 +30,7 @@ const parsePDF = (buffer: Buffer): Promise<string> => {
     const reader = new PdfReader();
     let textContent = "";
 
-    reader.parseBuffer(buffer, (err: Error | null, item: any) => { // Updated type here
+    reader.parseBuffer(buffer, (err: Error | null, item: any) => {
       if (err) {
         reject(err);
       } else if (!item) {
@@ -33,17 +42,50 @@ const parsePDF = (buffer: Buffer): Promise<string> => {
   });
 };
 
+// Function to make API calls with retries and exponential backoff
+const makeApiCall = async (
+  url: string,
+  data: any,
+  headers: any,
+  retries = 3,
+  backoff = 3000
+): Promise<any> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await axiosInstance.post(url, data, { headers });
+      return response;
+    } catch (error) {
+      if (i < retries - 1) {
+        console.warn(`API call failed. Retrying in ${backoff}ms...`);
+        await new Promise((res) => setTimeout(res, backoff));
+        backoff *= 2; // Exponential backoff
+      } else {
+        throw error;
+      }
+    }
+  }
+};
+
+// Exported POST handler for processing messages
 export const POST = async (req: NextRequest) => {
   try {
+    console.log("Received POST request");
     const body = await req.json();
+    console.log("Parsed request body");
+
     const { getUser } = getKindeServerSession();
     const user = getUser();
     const { id: userId } = user;
 
-    if (!userId) return new Response("Unauthorized", { status: 401 });
+    if (!userId) {
+      console.warn("Unauthorized access attempt");
+      return new Response("Unauthorized", { status: 401 });
+    }
 
     const { fileId, message } = SendMessageValidator.parse(body);
+    console.log(`Processing fileId: ${fileId} for userId: ${userId}`);
 
+    // Fetch the file from the database
     const file = await db.file.findFirst({
       where: {
         id: fileId,
@@ -51,8 +93,12 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-    if (!file) return new Response("Not found", { status: 404 });
+    if (!file) {
+      console.warn(`File with ID ${fileId} not found for user ${userId}`);
+      return new Response("Not found", { status: 404 });
+    }
 
+    // Create a new user message in the database
     await db.message.create({
       data: {
         text: message,
@@ -61,24 +107,30 @@ export const POST = async (req: NextRequest) => {
         userId,
       },
     });
+    console.log("User message saved to database");
 
-    // PDF processing with error handling
+    // Initialize variable to store parsed PDF text
     let pdfText = "";
     try {
-      const pdfResponse = await axios.get(file.url, {
+      console.log(`Fetching PDF from URL: ${file.url}`);
+      const pdfResponse = await axiosInstance.get(file.url, {
         responseType: "arraybuffer",
       });
-      
+      console.log("Fetched PDF successfully");
+
       const buffer = Buffer.from(pdfResponse.data);
+      console.log("Parsing PDF content");
       pdfText = await parsePDF(buffer);
-      
+      console.log("Parsed PDF successfully");
     } catch (pdfError) {
       console.error("Error processing PDF:", pdfError);
       return new Response("Failed to process PDF", { status: 500 });
     }
 
-    const results = pdfText.substring(0, 2000);
+    // Limit the amount of text extracted from the PDF
+    const results = pdfText.substring(0, 2000); // Adjust as needed
 
+    // Retrieve previous messages related to the file
     const prevMessages: Message[] = await db.message.findMany({
       where: {
         fileId,
@@ -97,7 +149,9 @@ export const POST = async (req: NextRequest) => {
       },
       take: 6,
     });
+    console.log("Fetched previous messages from database");
 
+    // Format previous messages for the API request
     const formattedPrevMessages = prevMessages.map((msg: Message) => ({
       role: msg.isUserMessage ? "user" : "assistant",
       content: msg.text,
@@ -107,6 +161,7 @@ export const POST = async (req: NextRequest) => {
       .map((msg) => msg.content)
       .join("\n\n");
 
+    // Construct the messages payload for the NVIDIA API
     const messages = [
       {
         role: "system",
@@ -121,35 +176,50 @@ export const POST = async (req: NextRequest) => {
     ];
 
     try {
-      const response = await axios.post(
-        "https://integrate.api.nvidia.com/v1/chat/completions", // Verify this endpoint
+      console.log("Calling NVIDIA API for chat completion");
+      const response = await makeApiCall(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
         {
           model: "nvidia/llama-3.1-nemotron-70b-instruct",
           messages,
           temperature: 0.5,
           top_p: 1,
-          max_tokens: 5024,
+          max_tokens: 5024, // Adjust if necessary
         },
         {
-          headers: {
-            Authorization: `Bearer ${NVIDIA_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
+          Authorization: `Bearer ${NVIDIA_API_KEY}`,
+          "Content-Type": "application/json",
         }
       );
+      console.log("Received response from NVIDIA API");
 
-      const completion = response.data.choices[0].message.content;
+      // Validate the response structure
+      if (
+        response.data &&
+        response.data.choices &&
+        response.data.choices[0] &&
+        response.data.choices[0].message &&
+        response.data.choices[0].message.content
+      ) {
+        const completion = response.data.choices[0].message.content;
+        console.log("Parsed completion from NVIDIA API");
 
-      await db.message.create({
-        data: {
-          text: completion,
-          isUserMessage: false,
-          fileId,
-          userId,
-        },
-      });
+        // Save the assistant's response to the database
+        await db.message.create({
+          data: {
+            text: completion,
+            isUserMessage: false,
+            fileId,
+            userId,
+          },
+        });
+        console.log("Assistant message saved to database");
 
-      return new Response(completion);
+        return new Response(completion);
+      } else {
+        console.error("Invalid response structure from NVIDIA API");
+        throw new Error("Invalid response structure from NVIDIA API");
+      }
     } catch (apiError) {
       console.error("Error calling NVIDIA API:", apiError);
       return new Response("Failed to generate response", { status: 500 });
