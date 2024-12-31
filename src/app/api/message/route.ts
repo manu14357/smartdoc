@@ -5,7 +5,7 @@ import { SendMessageValidator } from "@/lib/validators/SendMessageValidator"; //
 import { NextRequest } from "next/server"; // Next.js request object
 import axios from "axios"; // HTTP client for making API requests
 import { PdfReader } from "pdfreader"; // Library for parsing PDF files
-
+import OpenAI from 'openai';
 // Access the NVIDIA API key from environment variables for security
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
 
@@ -211,7 +211,8 @@ export const POST = async (req: NextRequest) => {
           model: "nvidia/llama-3.1-nemotron-70b-instruct", // Specify the model to use
           messages, // Send the constructed messages payload
           temperature: 0.5, // Controls the randomness of the output
-          top_p: 0.5, // Top-p sampling parameter
+          top_p: 0.7, // Top-p sampling parameter
+          stream : true,
           max_tokens: 1024, // Maximum number of tokens in the response
         },
         {
