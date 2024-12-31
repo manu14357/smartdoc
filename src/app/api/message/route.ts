@@ -21,7 +21,7 @@ const parsePDF = (buffer: Buffer): Promise<string> => {
     const reader = new PdfReader();
     let textContent = "";
 
-    reader.parseBuffer(buffer, (err: Error, item: any) => {
+    reader.parseBuffer(buffer, (err: Error | null, item: any) => { // Updated type here
       if (err) {
         reject(err);
       } else if (!item) {
