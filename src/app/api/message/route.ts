@@ -4,16 +4,13 @@ import { SendMessageValidator } from "@/lib/validators/SendMessageValidator";
 import { NextRequest } from "next/server";
 import axios from "axios";
 
-import { pdfjs } from "react-pdf";
-// Manually set the worker path for pdfjs
-import { join } from "path";
-pdfjs.GlobalWorkerOptions.workerSrc = join(
-  process.cwd(),
-  "node_modules",
-  "pdfjs-dist",
-  "build",
-  "pdf.worker.min.js",
-);
+// Import PDF.js with node canvas
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.js";
+import { TextItem } from "pdfjs-dist/types/src/display/api";
+
+// Configure PDF.js for Node environment
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
 // Define the Message interface
 interface Message {
@@ -70,8 +67,14 @@ export const POST = async (req: NextRequest) => {
     // Convert the Buffer to Uint8Array
     const pdfData = new Uint8Array(pdfResponse.data);
 
-    // Step 2: Load the PDF document using pdfjs-dist
-    const pdfDoc = await pdfjs.getDocument(pdfData).promise;
+    // Step 2: Load the PDF document using pdfjs-dist in node mode
+    const pdfDoc = await pdfjsLib.getDocument({
+      data: pdfData,
+      cMapUrl: CMAP_URL,
+      cMapPacked: CMAP_PACKED,
+      disableFontFace: true, // Disable font loading
+      verbosity: 0, // Reduce verbosity
+    }).promise;
 
     let pdfText = "";
     const numPages = pdfDoc.numPages;
@@ -82,7 +85,7 @@ export const POST = async (req: NextRequest) => {
       const textContent = await page.getTextContent();
       pdfText +=
         textContent.items
-          .map((item) => ("str" in item ? item.str : ""))
+          .map((item: any) => (item.str ? item.str : ""))
           .join(" ") + "\n";
     }
 
