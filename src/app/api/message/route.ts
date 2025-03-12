@@ -25,7 +25,9 @@ interface Message {
   createdAt: Date;
   updatedAt: Date;
 }
+
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY;
+
 export const POST = async (req: NextRequest) => {
   const body = await req.json();
 
@@ -130,36 +132,96 @@ export const POST = async (req: NextRequest) => {
       { role: "user", content: message },
     ];
 
-    // Step 6: Call NVIDIA API with the context and the message
-    const response = await axios.post(
+    // Set up the response as a stream
+    const encoder = new TextEncoder();
+    let fullResponse = "";
+    
+    // Create a TransformStream to process the streaming response
+    const stream = new TransformStream({
+      start(controller) {},
+      transform(chunk, controller) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`));
+      },
+      flush(controller) {
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      }
+    });
+    
+    // Create the response writer
+    const writer = stream.writable.getWriter();
+    
+    // Create the response object with appropriate headers for SSE
+    const response = new Response(stream.readable, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
+    
+    // Step 6: Call NVIDIA API with streaming enabled
+    const axiosResponse = await axios.post(
       "https://integrate.api.nvidia.com/v1/chat/completions",
       {
-        model: "nvidia/llama-3.1-nemotron-70b-instruct",
+        model: "meta/llama-3.3-70b-instruct",
         messages,
         temperature: 0.5,
         top_p: 1,
         max_tokens: 5024,
+        stream: true, // Enable streaming
       },
       {
         headers: {
-          Authorization: `Bearer ${NVIDIA_API_KEY}`, // Replace with your actual API key
+          Authorization: `Bearer ${NVIDIA_API_KEY}`,
         },
+        responseType: 'stream',
       },
     );
-
-    const completion = response.data.choices[0].message.content;
-
-    // Save the response from NVIDIA API to the database
-    await db.message.create({
-      data: {
-        text: completion,
-        isUserMessage: false,
-        fileId,
-        userId,
-      },
+    
+    // Process the streaming response
+    axiosResponse.data.on('data', async (chunk: Buffer) => {
+      const lines = chunk.toString().split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
+              const content = data.choices[0].delta.content;
+              fullResponse += content;
+              await writer.write(content);
+            }
+          } catch (error) {
+            console.error('Error parsing streaming response:', error);
+          }
+        }
+      }
+    });
+    
+    axiosResponse.data.on('end', async () => {
+      try {
+        // Save the complete response to the database when streaming is done
+        await db.message.create({
+          data: {
+            text: fullResponse,
+            isUserMessage: false,
+            fileId,
+            userId,
+          },
+        });
+        
+        await writer.close();
+      } catch (error) {
+        console.error('Error finalizing response:', error);
+        await writer.abort(error as Error);
+      }
+    });
+    
+    axiosResponse.data.on('error', async (error: Error) => {
+      console.error('Stream error:', error);
+      await writer.abort(error);
     });
 
-    return new Response(completion);
+    return response;
   } catch (error) {
     console.error("Error processing PDF or calling NVIDIA API:", error);
     return new Response("Failed to process the request", { status: 500 });

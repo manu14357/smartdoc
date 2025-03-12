@@ -17,6 +17,10 @@ const Message = forwardRef<HTMLDivElement, MessageProps>(
     const [copied, setCopied] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
+    
+    // Add blinking cursor effect for AI messages that are still being typed
+
+
     const handleCopy = () => {
       let textToCopy: string;
 
@@ -113,21 +117,26 @@ const Message = forwardRef<HTMLDivElement, MessageProps>(
             )}
           >
             {/* Message Text with Enhanced Mobile Contrast */}
-            {typeof message.text === "string" ? (
-              <ReactMarkdown
-                className={cn("prose text-sm sm:text-base pb-4", {
-                  "text-white sm:text-white font-medium": message.isUserMessage,
-                  "text-gray-900 sm:text-gray-800 font-medium":
-                    !message.isUserMessage,
-                  "prose-headings:text-current prose-strong:text-current prose-code:text-current":
-                    true,
-                })}
-              >
-                {message.text}
-              </ReactMarkdown>
-            ) : (
-              message.text
-            )}
+            <div className="relative">
+              {typeof message.text === "string" ? (
+                <ReactMarkdown
+                  className={cn("prose text-sm sm:text-base pb-4", {
+                    "text-white sm:text-white font-medium": message.isUserMessage,
+                    "text-gray-900 sm:text-gray-800 font-medium":
+                      !message.isUserMessage,
+                    "prose-headings:text-current prose-strong:text-current prose-code:text-current":
+                      true,
+                  })}
+                >
+                  {message.text}
+                </ReactMarkdown>
+              ) : (
+                message.text
+              )}
+
+              {/* Typing cursor animation */}
+
+            </div>
 
             {/* Copy Button for AI Messages */}
             {!message.isUserMessage && message.text && (
@@ -157,6 +166,8 @@ const Message = forwardRef<HTMLDivElement, MessageProps>(
                 </motion.div>
               </AnimatePresence>
             )}
+
+
 
             {/* Timestamp with Enhanced Visibility */}
             <div

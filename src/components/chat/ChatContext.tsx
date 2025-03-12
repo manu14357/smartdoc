@@ -112,7 +112,6 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
         throw new Error("Failed to send message");
       }
 
-      // Assuming the API returns a ReadableStream for streaming responses
       return response.body;
     },
     onMutate: async ({ message }) => {
@@ -189,67 +188,123 @@ export const ChatContextProvider = ({ fileId, children }: Props) => {
       let done = false;
       let accResponse = "";
 
+      // Create a temporary message ID for the AI response
+      const tempMessageId = "ai-response-" + Date.now();
+
+      // Create an initial AI response message
+      utils.getFileMessages.setInfiniteData(
+        { fileId, limit: INFINITE_QUERY_LIMIT },
+        (
+          old: InfiniteData<MessagePage> | undefined,
+        ): InfiniteData<MessagePage> | undefined => {
+          if (!old) return old;
+
+          const updatedPages = [...old.pages];
+          const latestPage = { ...updatedPages[0] };
+
+          latestPage.messages = [
+            {
+              createdAt: new Date().toISOString(),
+              id: tempMessageId,
+              text: "",
+              isUserMessage: false,
+              status: "sending" as MessageStatus,
+            },
+            ...latestPage.messages,
+          ];
+
+          updatedPages[0] = latestPage;
+          return { ...old, pages: updatedPages };
+        },
+      );
+
       while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-        const chunkValue = decoder.decode(value);
-        accResponse += chunkValue;
+        try {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          
+          if (value) {
+            // Process the chunks for SSE format
+            const chunkValue = decoder.decode(value);
+            const lines = chunkValue.split('\n');
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                try {
+                  // Parse the JSON data in the SSE format
+                  const data = JSON.parse(line.slice(6));
+                  if (data.content) {
+                    accResponse += data.content;
+                    
+                    // Update the AI response message with the accumulated response
+                    utils.getFileMessages.setInfiniteData(
+                      { fileId, limit: INFINITE_QUERY_LIMIT },
+                      (
+                        old: InfiniteData<MessagePage> | undefined,
+                      ): InfiniteData<MessagePage> | undefined => {
+                        if (!old) return old;
 
-        // Update the AI response message with the accumulated response
-        utils.getFileMessages.setInfiniteData(
-          { fileId, limit: INFINITE_QUERY_LIMIT },
-          (
-            old: InfiniteData<MessagePage> | undefined,
-          ): InfiniteData<MessagePage> | undefined => {
-            if (!old) return old;
+                        const updatedPages = old.pages.map((page) => {
+                          if (page === old.pages[0]) {
+                            const updatedMessages = page.messages.map((message) => {
+                              if (message.id === tempMessageId) {
+                                return {
+                                  ...message,
+                                  text: accResponse,
+                                };
+                              }
+                              return message;
+                            });
+                            return { ...page, messages: updatedMessages };
+                          }
+                          return page;
+                        });
 
-            const isAiResponseCreated = old.pages.some((page) =>
-              page.messages.some((message) => message.id === "ai-response"),
-            );
-
-            const updatedPages = old.pages.map((page) => {
-              if (page === old.pages[0]) {
-                let updatedMessages: Message[];
-
-                if (!isAiResponseCreated) {
-                  // If AI response doesn't exist, create it
-                  updatedMessages = [
-                    {
-                      createdAt: new Date().toISOString(),
-                      id: "ai-response",
-                      text: accResponse,
-                      isUserMessage: false,
-                      status: "sent" as MessageStatus, // Explicit type assertion
-                    },
-                    ...page.messages.map((msg) => ({
-                      ...msg,
-                      status: msg.isUserMessage ? "sent" : msg.status, // 'sent' is valid
-                    })),
-                  ];
-                } else {
-                  // If AI response exists, update its text and status
-                  updatedMessages = page.messages.map((message) => {
-                    if (message.id === "ai-response") {
-                      return {
-                        ...message,
-                        text: accResponse,
-                        status: "sent" as MessageStatus, // Explicit type assertion
-                      };
-                    }
-                    return message;
-                  });
+                        return { ...old, pages: updatedPages };
+                      },
+                    );
+                  }
+                } catch (error) {
+                  console.error('Error parsing streaming response:', error);
                 }
-
-                return { ...page, messages: updatedMessages };
               }
-
-              return page;
-            });
-
-            return { ...old, pages: updatedPages };
-          },
-        );
+            }
+          }
+        } catch (error) {
+          console.error("Error reading from stream:", error);
+          done = true;
+        }
       }
+
+      // Mark the AI message as sent when streaming is complete
+      utils.getFileMessages.setInfiniteData(
+        { fileId, limit: INFINITE_QUERY_LIMIT },
+        (
+          old: InfiniteData<MessagePage> | undefined,
+        ): InfiniteData<MessagePage> | undefined => {
+          if (!old) return old;
+
+          const updatedPages = old.pages.map((page) => {
+            if (page === old.pages[0]) {
+              const updatedMessages = page.messages.map((message) => {
+                if (message.id === tempMessageId) {
+                  return {
+                    ...message,
+                    status: "sent" as MessageStatus,
+                    // Generate a permanent ID for the completed message
+                    id: crypto.randomUUID(),
+                  };
+                }
+                return message;
+              });
+              return { ...page, messages: updatedMessages };
+            }
+            return page;
+          });
+
+          return { ...old, pages: updatedPages };
+        },
+      );
     },
     onError: (_error, _variables, context) => {
       // Rollback to the previous messages
