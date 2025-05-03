@@ -2,7 +2,7 @@
 
 <div align="center">
   
-# SmartDoc Chat
+# SmartDoc 
 
 <p align="center">
   <img src="https://github.com/manu14357/smartdoc/blob/main/src/components/Pics/Untitled%20design%20(1).png?raw=true" alt="SmartDoc Logo" width="100"/>
